@@ -16,7 +16,11 @@ def read_yaml(path='default.yaml'):
 
 
 def new_default_yaml():
-    return read_yaml()
+    new = read_yaml()
+    new['Instrument']['Systematics']['Table'] = new['Instrument']['Systematics']['Table'].replace('PSLS_DIR', PSLS_DIR)
+    new['Star']['ModelDir'] = new['Star']['ModelDir'].replace('PSLS_DIR', PSLS_DIR)
+    new['External']['FilePath'] = new['External']['FilePath'].replace('PSLS_DIR', PSLS_DIR)
+    return new
 
 
 def flatten(input_dict, parents=None):
