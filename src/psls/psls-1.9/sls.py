@@ -4,6 +4,8 @@ import re
 import scipy.optimize
 import FortranIO
 import universal_pattern as UP
+from platoconstants import cgs
+from platoconstants import cs
  
 ''''
 
@@ -48,21 +50,17 @@ along with this code.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
 
-# numax reference value (Mosser et al 2013, SF2A)
-numaxref= 3104.
-
 # solar constants
-nucsun = 5300.  # sun cutt-off freq.
-numaxsun = 3100.
-deltanusun = 135.
+numaxsun = numaxref = cs.nu_max
+deltanusun = cs.Delta_nu
 teffsun = 5777.
-msun = 1.98919e33           # solar mass
-rsun = 6.9599e10            # solar radius
-gmsun = 1.32712438e26       # G Msun
+msun = cgs.SOLAR_MASS               # solar mass
+rsun = cgs.SOLAR_RADIUS             # solar radius
+gmsun = cgs.SOLAR_MASS_PARAMETER    # G Msun
 logg_sun = math.log10(gmsun) - 2.*math.log10(rsun)
 ggrav = gmsun/msun          # grav. constant G
 
-    
+
 class SLSError(Exception):
     def __init__(self, value):
              self.value = value

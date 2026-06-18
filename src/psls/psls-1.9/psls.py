@@ -17,6 +17,7 @@ from astropy.timeseries import LombScargle
 import flares
 import h5py
 import string
+from platoconstants import cgs
 '''
 
 PSLS : PLATO Solar-like Light-curve Simulator
@@ -45,7 +46,7 @@ along with this code.  If not, see <http://www.gnu.org/licenses/>.
 __version__ = 1.9
 
 jupiterRadius = 71492.0  # km
-ua2Km = 149.59e6  # km
+ua2Km = cgs.au / 1e5  # km
 # NSR values computed by V. Marchiori (see Marchiori et al 2019, A&A)
 NSR_Pmag = np.array([7.76,8.16,8.66,9.16,9.66,10.16,10.66,11.16,11.66,12.16,12.56,12.76,13.16,13.66,14.16,14.66,15.16,15.56])# P magnitude
 NSR_Vmag = NSR_Pmag + 0.34 # V magnitude

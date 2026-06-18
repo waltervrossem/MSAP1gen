@@ -24,7 +24,7 @@ import numpy as np
 import math
 import scipy.optimize
 ## import ssilib
-
+from platoconstants import cs
 
 
 def gaussenvelop(nu,A,nu0,width):
@@ -45,7 +45,7 @@ A    : synthetic spectra
 """
 
 # Ref. M13 : Mosser et al 2013, SF2A
-numaxref= 3104.
+numaxref= cs.nu_max
 
 # sun cutt-off freq.
 nucsun = 5300.
