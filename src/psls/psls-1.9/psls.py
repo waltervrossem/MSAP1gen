@@ -650,9 +650,7 @@ if(MC & Verbose):
 
 if(Plot):   
     import matplotlib
-    matplotlib.use('TkAgg')
     import matplotlib.pyplot as plt
-    plt.ion()
 
 if(not SaveHDF5):
     if (FullOutput & MergedOutput):
@@ -1583,9 +1581,3 @@ if(Plot):
 
 if(Verbose):
     print ('done')
-    
-if(Verbose | Plot):
-    s=input('type ENTER to finish')
-
-
-
