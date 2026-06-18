@@ -47,16 +47,16 @@ def myFromstring(endian):
     except:
         if N.little_endian:
             littleendian = True
-            
+
     if littleendian:
         if endian in ['>','!']:
-            return 'swap', lambda s, t: N.fromstring(s,t).byteswap()
+            return 'swap', lambda s, t: N.frombuffer(s,t).byteswap()
         else:
-            return 'noswap', N.fromstring
+            return 'noswap', N.frombuffer
     elif endian in ['<']:
-        return 'swap', lambda s, t: N.fromstring(s,t).byteswap()
+        return 'swap', lambda s, t: N.frombuffer(s,t).byteswap()
     else:
-        return 'noswap', N.fromstring
+        return 'noswap', N.frombuffer
 
 
 class FortranBinaryFile(object):
@@ -68,7 +68,7 @@ class FortranBinaryFile(object):
     def __init__(self, filename, mode='r', endian='@', verbose=0):
         self.filename = filename = os.path.expanduser(filename)
         self.endian = endian
-        self.swap, self.fromstring = myFromstring(endian)
+        self.swap, self.frombuffer = myFromstring(endian)
         self.verbose = verbose
         if self.verbose:
             print('the byte-swapping is', self.swap)
@@ -123,12 +123,12 @@ class FortranBinaryFile(object):
 
     def readRecordNative(self, dtype=None):
         a = self.file.read(4)   # record size in bytes
-        recordsize = N.fromstring(a,'i')
+        recordsize = N.frombuffer(a,'i')
         record = self.file.read(recordsize[0])
         self.file.read(4)   # record size in bytes
 
         if dtype in ('f', 'i', 'I', 'b', 'B', 'h', 'H',  'l', 'L', 'd'):
-            return N.fromstring(record,dtype)
+            return N.frombuffer(record,dtype)
         elif dtype in ('c', 'x'):
             return struct.unpack(self.endian+'1'+dtype, record)
         else:
@@ -136,12 +136,12 @@ class FortranBinaryFile(object):
 
     def readRecordByteswapped(self, dtype=None):
         a = self.file.read(4)   # record size in bytes
-        recordsize = N.fromstring(a,'i').byteswap()
+        recordsize = N.frombuffer(a,'i').byteswap()
         record = self.file.read(recordsize[0])
         self.file.read(4)   # record size in bytes
 
         if dtype in ('f', 'i', 'I', 'b', 'B', 'h', 'H',  'l', 'L', 'd'):
-            return N.fromstring(record,dtype).byteswap()
+            return N.frombuffer(record,dtype).byteswap()
         elif dtype in ('c', 'x'):
             return struct.unpack(self.endian+'1'+dtype, record)
         else:
@@ -152,7 +152,7 @@ class FortranBinaryFile(object):
             self.file.seek(offset)
             record = self.file.read(recordsize*struct.calcsize(dtype))
         if dtype in ('b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'f', 'd'):
-            return self.fromstring(record, dtype)
+            return self.frombuffer(record, dtype)
         elif dtype in ('c', 'x'):
             return struct.unpack(self.endian+'1'+ttype, record)
         else:
