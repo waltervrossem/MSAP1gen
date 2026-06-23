@@ -8,6 +8,11 @@ from platoconstants import cgs
 from platoconstants import cs
 from common import PSLS_DIR
 
+astero_TEFF_SUN = 5777
+LOGG_SUN = math.log10(cgs.SOLAR_MASS_PARAMETER) - 2.*math.log10(cgs.SOLAR_RADIUS)
+FWHM_to_sigma = 2*np.sqrt(2*np.log(2))
+MAX_ELL = 3
+
 
 def read_yaml(path='default.yaml'):
     with open(path, 'r') as stream:
