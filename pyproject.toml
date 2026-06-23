@@ -24,7 +24,8 @@ dependencies = [
     "astropy",
     "h5py",
     "platoconstants@git+https://git.ias.u-psud.fr/plato_pdc_public/platoconstants.git",
-    "wsssss"
+    "wsssss",
+    "packaging"
 ]
 
 classifiers = [
