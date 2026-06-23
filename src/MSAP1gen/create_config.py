@@ -93,4 +93,4 @@ def setup(dirname, config, fname='psls.yaml'):
     os.makedirs(dirname, exist_ok=False)
     config = update_config(config)
     with open(f'{dirname}/{fname}', 'w') as stream:
-        yaml.dump(config, stream)
+        yaml.dump(config, stream, sort_keys=False)
