@@ -95,7 +95,6 @@ def update_config(new_config, old_config=None):
     return config
 
 
-def setup(dirname, config, fname='psls.yaml'):
 # Table 1 in Ball et al. 2018
 _table1_Ball2018 = np.array([
             [-3.710e0, 1.073e-3, 1.883e-4],
