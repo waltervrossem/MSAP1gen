@@ -192,7 +192,7 @@ def setup(dirname, config, gs_path, fname='psls.yaml'):
     os.makedirs(dirname, exist_ok=False)
     config = update_config(config)
     if gs_path is not None:
-        M, R, L, Teff, dat = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{config['Star']['ModelDir']}/{config['Star']['ModelName']}.txt")
+        M, R, L, Teff, dat = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{config['Star']['ModelName']}")
         config['Star']['Logg'] = float(np.log10(M/R**2) + LOGG_SUN)
         config['Star']['Teff'] = float(Teff)
         config['Oscillations']['numax'] = float(cs.solar_seismic.nu_max * (M/R**2) / np.sqrt(Teff/5777))
