@@ -52,8 +52,17 @@ def flatten(input_dict, parents=None):
     return items
 
 
-def update_config(new_config):
-    config = new_default_yaml()
+def update_config(new_config, old_config=None):
+    """
+    Nested dict update. If old_config is None, load the default yaml and then update using new_config.
+    :param new_config:
+    :param old_config:
+    :return:
+    """
+    if old_config is None:
+        config = new_default_yaml()
+    else:
+        config = copy.deepcopy(old_config)
     if isinstance(new_config, str):
         new_config = read_yaml(new_config)
     to_update = flatten(new_config)
@@ -63,7 +72,7 @@ def update_config(new_config):
 
         depth = len(keys)
 
-        # Deepest nesting has depth=4
+        # Deepest nesting in config has depth=4
         if depth == 0:
             raise ValueError(f'Zero depth: {option}')
         elif depth == 1:
