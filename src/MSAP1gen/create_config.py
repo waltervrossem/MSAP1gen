@@ -9,7 +9,6 @@ from scipy import interpolate as ip
 from scipy.special import assoc_legendre_p
 from packaging.version import parse as parse_version
 from wsssss import load_data as ld
-from wsssss.constants import post15140 as c
 from platoconstants import cgs
 from platoconstants import cs
 from common import PSLS_DIR
@@ -122,9 +121,9 @@ def convert_gyre(inclination, gs_path, out_path):
     gs.data = gs.data[mask]
     nu = gs.get('Re(freq)')
     # Convert from MESA constants to platoconstants
-    M = gs.get('M_star')[0] * c.msun / cgs.SOLAR_MASS
-    R = gs.get('R_star')[0] * c.rsun / cgs.SOLAR_RADIUS
-    L = gs.get('L_star')[0] * c.lsun / cgs.SOLAR_LUMINOSITY
+    M = gs.get('M_star')[0] / cgs.SOLAR_MASS
+    R = gs.get('R_star')[0] / cgs.SOLAR_RADIUS
+    L = gs.get('L_star')[0] / cgs.SOLAR_LUMINOSITY
     Teff = (L * cgs.SOLAR_LUMINOSITY / (4 * np.pi * cgs.STEFAN_BOLTZMANN * R**2 * cgs.SOLAR_RADIUS**2))**0.25
 
     nu_max = cs.solar_seismic.nu_max * (M/R**2) / np.sqrt(Teff/5777)
