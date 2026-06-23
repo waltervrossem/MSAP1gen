@@ -6,6 +6,7 @@ import contextlib
 from packaging.version import parse as parse_version
 from platoconstants import cgs
 from platoconstants import cs
+from common import PSLS_DIR
 
 
 def read_yaml(path='default.yaml'):
@@ -17,11 +18,16 @@ def read_yaml(path='default.yaml'):
     return dat
 
 
+def replace_PSLS_DIR(config):
+    config['Instrument']['Systematics']['Table'] = config['Instrument']['Systematics']['Table'].replace('PSLS_DIR', PSLS_DIR)
+    config['Star']['ModelDir'] = config['Star']['ModelDir'].replace('PSLS_DIR', PSLS_DIR)
+    config['External']['FilePath'] = config['External']['FilePath'].replace('PSLS_DIR', PSLS_DIR)
+    return config
+
+
 def new_default_yaml():
     new = read_yaml()
-    new['Instrument']['Systematics']['Table'] = new['Instrument']['Systematics']['Table'].replace('PSLS_DIR', PSLS_DIR)
-    new['Star']['ModelDir'] = new['Star']['ModelDir'].replace('PSLS_DIR', PSLS_DIR)
-    new['External']['FilePath'] = new['External']['FilePath'].replace('PSLS_DIR', PSLS_DIR)
+    new = replace_PSLS_DIR(new)
     return new
 
 
@@ -65,6 +71,7 @@ def update_config(new_config):
             config[keys[0]][keys[1]][keys[2]][keys[3]] = value
         else:
             raise ValueError(f'Maximum depth exceeded: {option}')
+    config = replace_PSLS_DIR(config)
     return config
 
 

@@ -2,22 +2,9 @@
 
 import os
 import argparse
-import contextlib
 import create_config as cg
+from common import PSLS_DIR, temp_chdir
 
-if 'PSLS_DIR' in os.environ:
-    PSLS_DIR = os.environ['PSLS_DIR']
-else:
-    PSLS_DIR = '../psls/psls-1.9'
-
-@contextlib.contextmanager
-def temp_chdir(dirname):
-    initial_cwd = os.getcwd()
-    os.chdir(os.path.abspath(dirname))
-    try:
-        yield
-    finally:
-        os.chdir(initial_cwd)
 
 
 def run(dirname, configname='config.yaml', fname='psls.yaml', psls_config='-V -P', capture_output=False):
