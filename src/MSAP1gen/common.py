@@ -1,5 +1,7 @@
 import os
 import contextlib
+import yaml
+from packaging.version import parse as parse_version
 
 if 'PSLS_DIR' in os.environ:
     PSLS_DIR = os.environ['PSLS_DIR']
@@ -30,3 +32,12 @@ def make_yaml_str(config, indent=0):
             out += f"{' '*indent} {value}\n"
         indent -= 4
     return out
+
+
+def read_yaml(path='default.yaml'):
+    with open(path, 'r') as handle:
+        if parse_version(yaml.__version__) < parse_version("5.0"):
+            dat = yaml.load(handle)
+        else:
+            dat = yaml.load(handle, Loader=yaml.FullLoader)
+    return dat

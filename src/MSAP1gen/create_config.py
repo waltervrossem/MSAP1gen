@@ -7,27 +7,17 @@ import copy
 
 from scipy import interpolate as ip
 from scipy.special import assoc_legendre_p
-from packaging.version import parse as parse_version
 from wsssss import load_data as ld
 from platoconstants import cgs
 from platoconstants import cs
 
 from MSAP1gen import common
-from common import PSLS_DIR
+from common import PSLS_DIR, read_yaml
 
 astero_TEFF_SUN = 5777
 LOGG_SUN = math.log10(cgs.SOLAR_MASS_PARAMETER) - 2.*math.log10(cgs.SOLAR_RADIUS)
 FWHM_to_sigma = 2*np.sqrt(2*np.log(2))
 MAX_ELL = 3
-
-
-def read_yaml(path='default.yaml'):
-    with open(path, 'r') as stream:
-        if parse_version(yaml.__version__) < parse_version("5.0"):
-            dat = yaml.load(stream)
-        else:
-            dat = yaml.load(stream, Loader=yaml.FullLoader)
-    return dat
 
 
 def replace_PSLS_DIR(config):
