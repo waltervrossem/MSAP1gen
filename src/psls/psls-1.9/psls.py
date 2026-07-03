@@ -43,7 +43,7 @@ along with this code.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 
-__version__ = 1.9
+__version__ = '1.9.1'
 
 jupiterRadius = 71492.0  # km
 ua2Km = cgs.au / 1e5  # km
@@ -1309,7 +1309,7 @@ for iMC in range(nMC):
     hd = ''
     hd += ('StarID = %10.10i\n') % (StarID)  
     hd += ("Master_seed = %i\n") % (MasterSeed)
-    hd += ("Version = %7.2f\n") % (__version__)
+    hd += ("Version = %s\n") % (__version__)
 
     if(MergedOutput):
         merged_ts = np.zeros((nt, NGroup, 4))
