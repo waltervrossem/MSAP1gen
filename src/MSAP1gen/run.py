@@ -23,6 +23,9 @@ def get_parser():
                         help="Capture output to out.txt.")
     args = parser.parse_args()
     run(dirname=args.dirname, configname=args.config, fname=args.fname, psls_config=args.psls_config, capture_output=args.tee)
+    parser.add_argument('--seed', type=int, default=0,
+                        help="Seed for random number generator. If 0, use default defined in default.yaml. If 1 create"
+                             "a seed from hash of config, otherwise use the value passed.")
     return parser
 
 
@@ -33,8 +36,10 @@ def run(args):
     gs_path = args.gs_path
     psls_args = args.psls_args
     capture_output = args.tee
+    seed = args.seed
 
-    cg.setup(dirname, configname, gs_path, fname)
+    cg.setup(dirname, configname, gs_path, seed, fname)
+    
     cmd = f'python {PSLS_DIR}/psls.py {psls_args} {fname}'
     if capture_output:
         cmd += ' | tee out.txt'

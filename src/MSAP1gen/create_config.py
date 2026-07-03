@@ -190,7 +190,7 @@ def convert_gyre(inclination, gs_path, out_path):
     return M, R, L, Teff, dat
 
 
-def setup(dirname, config, gs_path, fname='psls.yaml'):
+def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
     os.makedirs(dirname, exist_ok=False)
     config = update_config(config)
     if gs_path is not None:
@@ -198,5 +198,12 @@ def setup(dirname, config, gs_path, fname='psls.yaml'):
         config['Star']['Logg'] = float(np.log10(M/R**2) + LOGG_SUN)
         config['Star']['Teff'] = float(Teff)
         config['Oscillations']['numax'] = float(cs.solar_seismic.nu_max * (M/R**2) / np.sqrt(Teff/5777))
+
+    if seed == 0:
+        pass
+    elif seed == 1:  # Generate a MasterSeed using contents of config
+        config['Observation']['MasterSeed'] = hash(yaml.dump(config, sort_keys=True))
+    else:
+        config['Observation']['MasterSeed'] = int(seed)
     with open(f'{dirname}/{fname}', 'w') as handle:
         handle.write(common.make_yaml_str(config))
