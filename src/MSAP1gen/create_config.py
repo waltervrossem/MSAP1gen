@@ -118,8 +118,8 @@ def convert_gyre(inclination, gs_path, out_path):
     L = gs.get('L_star')[0] / cgs.SOLAR_LUMINOSITY
     Teff = (L * cgs.SOLAR_LUMINOSITY / (4 * np.pi * cgs.STEFAN_BOLTZMANN * R**2 * cgs.SOLAR_RADIUS**2))**0.25
 
-    nu_max = cs.solar_seismic.nu_max * (M/R**2) / np.sqrt(Teff/5777)
-    delta_nu = cs.solar_seismic.Delta_nu * np.nan
+    nu_max = cs.solar_seismic.nu_max * (M/R**2) / np.sqrt(Teff/astero_TEFF_SUN)
+    delta_nu = cs.solar_seismic.Delta_nu * np.sqrt(M/R**3)
     gamma_envelope = 0.66 * nu_max**0.88
     sigma_envelope = gamma_envelope / FWHM_to_sigma
 
@@ -177,17 +177,18 @@ def convert_gyre(inclination, gs_path, out_path):
     # pdb.set_trace()
     dat = np.stack([freq, width, height], axis=1)
     np.savetxt(out_path, dat, delimiter=' ', fmt='%.6f', header='# nu [muHz]  Gamma [muHz]  H [ppm2/muHz]')
-    return M, R, L, Teff, dat
+    return M, R, L, Teff, nu_max, delta_nu, dat
 
 
 def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
     os.makedirs(dirname, exist_ok=False)
     config = update_config(config)
     if gs_path is not None:
-        M, R, L, Teff, dat = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{config['Star']['ModelName']}")
+        M, R, L, Teff, nu_max, Delta_nu, dat = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{config['Star']['ModelName']}")
         config['Star']['Logg'] = float(np.log10(M/R**2) + LOGG_SUN)
         config['Star']['Teff'] = float(Teff)
-        config['Oscillations']['numax'] = float(cs.solar_seismic.nu_max * (M/R**2) / np.sqrt(Teff/5777))
+        config['Oscillations']['numax'] = nu_max
+        config['Oscillations']['deltanu'] = Delta_nu
 
     if seed == 0:
         pass
