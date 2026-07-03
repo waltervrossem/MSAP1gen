@@ -17,3 +17,16 @@ def temp_chdir(dirname):
         yield
     finally:
         os.chdir(initial_cwd)
+
+
+def make_yaml_str(config, indent=0):
+    out = ''
+    for key, value in config.items():
+        out += f"{' '*indent}{key}:\n"
+        indent += 4
+        if isinstance(value, dict):
+            out += make_yaml_str(value, indent)
+        else:
+            out += f"{' '*indent} {value}\n"
+        indent -= 4
+    return out

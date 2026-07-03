@@ -11,6 +11,8 @@ from packaging.version import parse as parse_version
 from wsssss import load_data as ld
 from platoconstants import cgs
 from platoconstants import cs
+
+from MSAP1gen import common
 from common import PSLS_DIR
 
 astero_TEFF_SUN = 5777
@@ -196,5 +198,5 @@ def setup(dirname, config, gs_path, fname='psls.yaml'):
         config['Star']['Logg'] = float(np.log10(M/R**2) + LOGG_SUN)
         config['Star']['Teff'] = float(Teff)
         config['Oscillations']['numax'] = float(cs.solar_seismic.nu_max * (M/R**2) / np.sqrt(Teff/5777))
-    with open(f'{dirname}/{fname}', 'w') as stream:
-        yaml.dump(config, stream, sort_keys=False)
+    with open(f'{dirname}/{fname}', 'w') as handle:
+        handle.write(common.make_yaml_str(config))
