@@ -40,6 +40,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this code.  If not, see <http://www.gnu.org/licenses/>.
 
+Customized by Walter van Rossem based on v1.9.
 '''
 
 
@@ -1369,7 +1370,7 @@ for iMC in range(nMC):
                 hdf5file.attrs.create(key,val)
 
         # save the setup
-        hdf5file.attrs['Setup'] = yaml.dump(cfg)
+        hdf5file.attrs['Setup'] = repr(cfg)
 
         # save the data
         dset1 = hdf5file.create_dataset('MEAN_LC', data=single_ts[:,1:])
