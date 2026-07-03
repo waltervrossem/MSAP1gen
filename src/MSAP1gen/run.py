@@ -15,10 +15,10 @@ def get_parser():
     parser.add_argument('--gs-path', type=str, default=None,
                         help="Path to Gyre Summary file. This file must contain Mode frequencies in uHz, mode inertia,"
                              "mode degree, model mass, photospheric radius, and luminosity.")
-    parser.add_argument('--fname', '-f', type=str,
+    parser.add_argument('--fname', '-f', type=str, default='psls.yaml',
                         help="Filename of output configuration file.")
-    parser.add_argument('--psls-args', type=str, default = '-V -P',
-                        help="Arguments for psls.py")
+    parser.add_argument('--psls-args', type=str, default = '--hdf5',
+                        help="Arguments for psls.py. Note that a \\ might be required if starting with a '-'.")
     parser.add_argument('--tee', '-t', action='store_const', const=True, default=False,
                         help="Capture output to out.txt.")
     args = parser.parse_args()
