@@ -10,8 +10,9 @@ def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dirname', '-d', type=str,
                         help="Working directory in which to create config file and run psls.py.")
-    parser.add_argument('--config', '-c', type=str, default='config.yaml',
-                        help="Path to configuration file with which to update default settings.")
+    parser.add_argument('--config', '-c', type=str, default='config.yaml', nargs='*',
+                        help="Path to one or more configuration files with which to update default settings."
+                             "They are applied in the order they are specified.")
     parser.add_argument('--gs-path', type=str, default=None,
                         help="Path to Gyre Summary file. This file must contain Mode frequencies in uHz, mode inertia,"
                              "mode degree, model mass, photospheric radius, and luminosity.")

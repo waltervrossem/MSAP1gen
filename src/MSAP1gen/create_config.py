@@ -183,6 +183,13 @@ def convert_gyre(inclination, gs_path, out_path):
 def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
     os.makedirs(dirname, exist_ok=False)
     config = update_config(config)
+    if isinstance(config, list):
+        _config = None
+        for sub_config in config:
+            _config = update_config(sub_config, _config)
+        config = _config
+    else:
+        config = update_config(config)
     if gs_path is not None:
         M, R, L, Teff, nu_max, Delta_nu, dat = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{config['Star']['ModelName']}")
         config['Star']['Logg'] = float(np.log10(M/R**2) + LOGG_SUN)
