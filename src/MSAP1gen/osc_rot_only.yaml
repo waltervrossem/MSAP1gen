@@ -1,0 +1,21 @@
+Observation:
+    Gaps:
+        Enable:
+             0
+Instrument:
+    RandomNoise:
+      Type: PLATO_SCALING
+    Systematics:
+      Enable : 0
+Activity:
+    Enable:
+         0
+    Flare:
+        Enable:
+             0
+Transit:
+    Enable:
+         0
+External:
+    Enable:
+         0
