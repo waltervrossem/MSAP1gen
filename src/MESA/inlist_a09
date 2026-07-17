@@ -1,0 +1,22 @@
+! solar_calib_agss09_24081_2025-07-23_111626
+! Run, Cost, logL, logR, a_mlt, Y_ini, Z_ini, Teff, X_surf, Y_surf, ZX_surf, Age
+! 16, 1.994097e+00, 1.325073e-05, 8.884921e-07, 1.967534, 0.267439, 0.015553, 5772.041551, 0.741331, 0.244212, 0.019501, 4.567299e+09
+
+&star_job
+    initial_zfracs = 6 ! agss09
+    change_net = .true.
+    new_net_name = 'pp_and_cno_extras.net'
+/ ! end of star_job namelist
+
+&kap
+    kap_file_prefix = 'a09'
+    kap_lowT_prefix = 'lowT_fa05_a09p'
+    kap_CO_prefix = 'a09_co'
+    Zbase = 0.015553
+/ ! end of kap namelist
+
+&controls
+    mixing_length_alpha = 1.967534
+    initial_y = 0.267439
+    initial_z = 0.015553
+/ ! end of controls namelist

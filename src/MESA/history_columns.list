@@ -1,0 +1,43 @@
+model_number
+num_zones
+elapsed_time
+log_dt
+
+star_mass
+star_age
+photosphere_r
+radius ! Need for kipp relr
+luminosity
+effective_T
+
+nu_max
+delta_nu
+delta_Pg
+
+mass_conv_core
+he_core_mass
+he_core_radius
+co_core_mass
+co_core_radius
+
+pp
+cno
+tri_alpha
+c_alpha
+
+add_center_abundances
+add_surface_abundances
+
+log_LH ! log10 power_h_burn
+log_LHe ! log10 power_he_burn
+log_LZ ! log10 total burning power excluding LH and LHe and photodisintegrations
+log_Lneu ! log10 power emitted in neutrinos, nuclear and thermal (in Lsun units)
+
+center_T          ! temperature
+center_Rho        ! density
+center_P          ! pressure
+center_degeneracy ! the electron chemical potential in units of k*T
+center_mu
+
+mixing_regions 30
+burning_regions 30

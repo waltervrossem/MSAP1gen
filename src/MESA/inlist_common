@@ -1,0 +1,98 @@
+&star_job
+    show_net_species_info = .true.
+    relax_tau_factor = .true.
+    relax_to_this_tau_factor = 1d-4
+
+    create_pre_main_sequence_model = .true.
+    pre_ms_T_c = 9d5
+
+    set_initial_dt = .true.
+    years_for_initial_dt = 1d3
+
+    change_net = .true.
+    new_net_name = 'pp_and_cno_extras.net'
+    profile_columns_file = 'profile_columns.list'
+    history_columns_file = 'history_columns.list'
+    pgstar_flag = .false.
+
+    ! Add Imbriani 14N(p,g)15O
+    num_special_rate_factors = 1
+    reaction_for_special_factor(1) = 'r_n14_pg_o15'
+    filename_of_special_rate(1) = 'rates_tables/r_n14_pg_o15_im05.txt'
+/ ! end of star_job namelist
+
+&kap
+    cubic_interpolation_in_X = .true.
+    cubic_interpolation_in_Z = .true.
+    use_Type2_opacities = .true.
+/ ! end of kap namelist
+
+&controls
+    initial_mass = 1d0
+    atm_option = 'T_tau'
+    atm_T_tau_relation = 'Trampedach_solar'
+    atm_T_tau_opacity = 'varying'
+    use_T_tau_gradr_factor = .true.
+
+    history_interval = 1
+    write_profiles_flag = .true.
+    profile_interval = 100000  ! Use saving routine instead so set this high
+    photo_interval = 500
+    photo_digits = 5
+    max_num_profile_models = 300
+    mixing_D_limit_for_log = 1d-2  ! https://iopscience.iop.org/article/10.3847/2515-5172/adf06d
+    
+    write_pulse_data_with_profile = .true.
+    pulse_data_format = 'GYRE'
+
+    mesh_delta_coeff = 1
+    varcontrol_target = 1d-4
+    max_dq = 1d-3
+    min_dq_for_xa = 1d-4
+    convective_bdy_weight = 20
+    convective_bdy_dq_limit = 3d-05
+    convective_bdy_min_dt_yrs = 1d-3
+
+    timestep_dt_factor = 0.5d0
+    delta_lg_XH_cntr_min = -6
+    delta_lg_XH_cntr_max = 0
+    delta_lg_XH_cntr_limit = 0.01d0
+    delta_lg_XH_cntr_hard_limit = 0.02d0
+
+    T_mix_limit = 1d4
+
+    MLT_option = 'Cox'
+
+    use_Ledoux_criterion = .true.
+    do_conv_premix = .true.
+    do_premix_heating = .true.
+    conv_premix_avoid_increase = .true.
+
+    use_other_D_mix = .true.
+
+    ! D_turb mixing: https://royalsocietypublishing.org/doi/pdf/10.1098/rsos.170192
+    x_ctrl(1) = 400d0  ! D_turb constant
+    x_ctrl(2) = -3d0  ! D_turb exponent
+    x_ctrl(3) = 1d6  ! D_turb reference temperature
+
+    overshoot_D_min = 1d-2 ! https://iopscience.iop.org/article/10.3847/2515-5172/adf06d
+
+    overshoot_scheme(1) = 'exponential'
+    overshoot_zone_type(1) = 'nonburn'
+    overshoot_zone_loc(1) = 'shell'
+    overshoot_bdy_loc(1) = 'bottom'
+    overshoot_f(1) = 0.025d0
+    overshoot_f0(1) = 0.005d0
+
+    overshoot_scheme(2) = 'exponential'
+    overshoot_zone_type(2) = 'burn_H'
+    overshoot_zone_loc(2) = 'core'
+    overshoot_bdy_loc(2) = 'top'
+    overshoot_f(2) = 0.0180d0
+    overshoot_f0(2) = 0.005d0
+
+    do_element_diffusion = .true.
+    do_diffusion_heating = .true.
+    diffusion_use_isolve = .true.
+
+/ ! end of controls namelist
