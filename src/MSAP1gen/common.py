@@ -1,5 +1,7 @@
 import os
 import contextlib
+
+import numpy as np
 import yaml
 from packaging.version import parse as parse_version
 
@@ -29,6 +31,8 @@ def make_yaml_str(config, indent=0):
         if isinstance(value, dict):
             out += make_yaml_str(value, indent)
         else:
+            if isinstance(value, np.ndarray):
+                value = value.tolist()
             out += f"{' '*indent} {value}\n"
         indent -= 4
     return out
