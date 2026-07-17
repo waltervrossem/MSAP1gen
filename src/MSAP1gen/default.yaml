@@ -59,7 +59,7 @@ Star:
   Teff : -1.  # Effective temperature [K]
   Logg : -1 # Surface gravity, ignored for the UP
   SurfaceRotationPeriod :  30. # Surface rotation period [days]
-  CoreRotationFreq :  0. # Core rotation frequency [muHz], this is by definition Omega/2pi*1e6 where Omega is the angular rate [rad/s], included only for l=1 modes
+  CoreRotationFreq :  -1 # Core rotation frequency [muHz], this is by definition Omega/2pi*1e6 where Omega is the angular rate [rad/s], included only for l=1 modes
   Inclination : 90. # Inclination angle [deg.],  Inclination=0, the rotation axis points toward the observer
 
 # Oscillations
@@ -77,7 +77,7 @@ Activity :
   # Stochastic component (Lorentzian component, see Samadi et al 2019)
   # Not included when ModelType = "UP"
   # Should not be used when spot modulation is enabled (see below)
-  Enable: 1
+  Enable: 0
   Sigma : 40. # Amplitude of the activity component [ppm]
   Tau : 0.2 # Timescale of the activity component [days]
   Seed: -1 # Seed of the pseudo-random number generator used to simulate the (stochastic) activity component
@@ -124,7 +124,6 @@ Transit :
   PlanetSemiMajorAxis : 1.  # in A.U.
   OrbitalAngle : 0. # in deg
   LimbDarkeningCoefficients: [0.25,0.75] # 2 or 4 coefficients can be used. 2 for a quadratic law and 4 for a non-linear law
-
 
 External:  # external stellar component: any additional stellar variability imposed by the user using an external TEXT file
   Enable: 0
