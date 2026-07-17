@@ -4,6 +4,7 @@ import os
 import argparse
 import create_config as cg
 from common import PSLS_DIR, temp_chdir
+from format import format_MSAP1_in
 
 
 def get_parser():
