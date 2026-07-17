@@ -27,7 +27,7 @@ def get_parser():
     parser.add_argument('--format', action='store_const', const=True, default=False,
                         help="Put lightcurves into correct format for MSAP1.")
     parser.add_argument('--seed', type=int, default=0,
-                        help="Seed for random number generator. If 0, use default defined in default.yaml. If 1 create"
+                        help="Seed for random number generator. If 0, use value defined in configuration file. If 1 create"
                              "a seed from hash of config, otherwise use the value passed.")
     return parser
 

@@ -206,7 +206,7 @@ def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
     if seed == 0:
         pass
     elif seed == 1:  # Generate a MasterSeed using contents of config
-        config['Observation']['MasterSeed'] = hash(yaml.dump(config, sort_keys=True))
+        config['Observation']['MasterSeed'] = hash(yaml.dump(config, sort_keys=True)) % 2**32
     else:
         config['Observation']['MasterSeed'] = int(seed)
     with open(f'{dirname}/{fname}', 'w') as handle:
