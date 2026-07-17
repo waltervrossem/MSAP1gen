@@ -120,6 +120,10 @@ def convert_gyre(inclination, gs_path, out_path):
 
     nu_max = cs.solar_seismic.nu_max * (M/R**2) / np.sqrt(Teff/astero_TEFF_SUN)
     delta_nu = cs.solar_seismic.Delta_nu * np.sqrt(M/R**3)
+
+    if os.path.exists(out_path):  # Already done
+        return M, R, L, Teff, nu_max, delta_nu
+
     gamma_envelope = 0.66 * nu_max**0.88
     sigma_envelope = gamma_envelope / FWHM_to_sigma
 
