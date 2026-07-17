@@ -23,8 +23,8 @@ def get_parser():
                         help="Arguments for psls.py. Note that a \\ might be required if starting with a '-'.")
     parser.add_argument('--tee', '-t', action='store_const', const=True, default=False,
                         help="Capture output to out.txt.")
-    args = parser.parse_args()
-    run(dirname=args.dirname, configname=args.config, fname=args.fname, psls_config=args.psls_config, capture_output=args.tee)
+    parser.add_argument('--format', action='store_const', const=True, default=False,
+                        help="Put lightcurves into correct format for MSAP1.")
     parser.add_argument('--seed', type=int, default=0,
                         help="Seed for random number generator. If 0, use default defined in default.yaml. If 1 create"
                              "a seed from hash of config, otherwise use the value passed.")
