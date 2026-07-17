@@ -167,8 +167,10 @@ def convert_gyre(inclination, gs_path, out_path):
     Vl = np.array([1.0, 1.54, 0.51, 0.10])
 
     ell = gs.get('l')
-    # m = gs.get('m')
-    m = np.zeros_like(ell)
+    if 'm' not in gs.columns:
+        m = np.zeros_like(ell)
+    else:
+        m = gs.get('m')
 
     eps_lm = _eps_ml_part[ell, m] * assoc_legendre_p(ell, m, np.cos(inclination)).flatten()**2
 
@@ -178,10 +180,10 @@ def convert_gyre(inclination, gs_path, out_path):
     freq = nu
     width = gamma_nl
     height = H_nl
-    # pdb.set_trace()
+
     dat = np.stack([freq, width, height], axis=1)
     np.savetxt(out_path, dat, delimiter=' ', fmt='%.6f', header='# nu [muHz]  Gamma [muHz]  H [ppm2/muHz]')
-    return M, R, L, Teff, nu_max, delta_nu, dat
+    return M, R, L, Teff, nu_max, delta_nu
 
 
 def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
@@ -201,7 +203,7 @@ def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
             raise FileNotFoundError(f'GyreSummary file not found: {gs_path}')
 
     if gs_path is not None:
-        M, R, L, Teff, nu_max, Delta_nu, dat = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{config['Star']['ModelName']}")
+        M, R, L, Teff, nu_max, Delta_nu = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{config['Star']['ModelName']}")
         config['Star']['Logg'] = float(np.log10(M/R**2) + LOGG_SUN)
         config['Star']['Teff'] = float(Teff)
         config['Oscillations']['numax'] = nu_max
