@@ -51,6 +51,13 @@ def run(args):
         ierr = os.system(cmd)
         if ierr != 0:
             raise RuntimeError(f'Error running psls.py.')
+        if args.format:
+            psls_config = read_yaml(args.fname)
+            # Filename part from psls.py
+            StarName = "%10.10i" % psls_config['Star']['ID']
+            input_file = f'{StarName}.hdf5'
+            output_file = f'ref{StarName}.hdf5'
+            format_MSAP1_in(input_file, output_file)
 
 if __name__ == "__main__":
     args = get_parser().parse_args()
