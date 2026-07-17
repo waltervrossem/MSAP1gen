@@ -189,6 +189,13 @@ def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
         config = _config
     else:
         config = update_config(config)
+
+    if gs_path is None:
+        hist_num, prof_num, rot = config['Star']['ModelName'].split('_')
+        gs_path = f'{os.path.dirname(__file__)}/../MESA/grid/{hist_num}/rot/profile{prof_num}.data.GYRE.{rot}.sgyre_l'
+        if not os.path.exists(gs_path):
+            raise FileNotFoundError(f'GyreSummary file not found: {gs_path}')
+
     if gs_path is not None:
         M, R, L, Teff, nu_max, Delta_nu, dat = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{config['Star']['ModelName']}")
         config['Star']['Logg'] = float(np.log10(M/R**2) + LOGG_SUN)

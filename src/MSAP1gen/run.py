@@ -15,7 +15,8 @@ def get_parser():
                              "They are applied in the order they are specified.")
     parser.add_argument('--gs-path', type=str, default=None,
                         help="Path to Gyre Summary file. This file must contain Mode frequencies in uHz, mode inertia,"
-                             "mode degree, model mass, photospheric radius, and luminosity.")
+                             "mode degree, model mass, photospheric radius, and luminosity. If not specified, will try"
+                             "to find it using ModelName in config.yaml.")
     parser.add_argument('--fname', '-f', type=str, default='psls.yaml',
                         help="Filename of output configuration file.")
     parser.add_argument('--psls-args', type=str, default = '--hdf5',
