@@ -182,7 +182,6 @@ def convert_gyre(inclination, gs_path, out_path):
 
 def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
     os.makedirs(dirname, exist_ok=False)
-    config = update_config(config)
     if isinstance(config, list):
         _config = None
         for sub_config in config:
