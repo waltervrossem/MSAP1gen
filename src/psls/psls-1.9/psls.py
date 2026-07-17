@@ -772,6 +772,11 @@ Granulation = cfg['Granulation']
 Granulation_Type = int(Granulation['Type'])
 GranulationEnable = (Granulation['Enable']==1)
 Transit = cfg['Transit']
+if Transit['Enable'] > 1:  # Check if number of planet properties is correct
+    transit_params = np.array(list(map(len, (Transit['PlanetRadius'], Transit['OrbitalPeriod'], Transit['PlanetSemiMajorAxis'], Transit['OrbitalAngle']))))
+    if not np.all(transit_params == Transit['Enable']):
+        raise ValueError(f'Expected {Transit["Enable"]} Transit parameters, got {transit_params.tolist()} for PlanetRadius, OrbitalPeriod, PlanetSemiMajorAxis, OrbitalAngle.'
+                         f'Either set Transit["Enable"] to correct number or provide the correct number of parameters.')
 
 Observation = cfg['Observation']
 Gaps = Observation['Gaps']
@@ -891,44 +896,10 @@ else:
                                                        GST=Granulation_Type,granulation=GranulationEnable,
                                                        activity=activity)
 
-TransitEnable = (Transit['Enable']==1)
-if(TransitEnable):
-    SampleNumber = time.size
-    StarRadius = opar[0]['radius']*sls.rsun*1e-5 # in km
-    PlanetRadius = Transit['PlanetRadius'] * jupiterRadius  # in km
-    p = PlanetRadius / StarRadius
-    _, z,transit_dates,transit_phases = generateZ(Transit['OrbitalPeriod']*86400., Transit['PlanetSemiMajorAxis']*ua2Km,
-              StarRadius,Sampling, IntegrationTime, 0. , SampleNumber,
-              Transit['OrbitalAngle']*math.pi/180., p)
-    ## gamma = [.25, .75]
-    gamma = np.array(Transit['LimbDarkeningCoefficients'],dtype=np.float64)
-    if  len(gamma) == 4:  transit = tr.occultnonlin(z, p, gamma)
-    else:  transit = tr.occultquad(z, p, gamma, verbose=Verbose)
-    if(Verbose):
-        print (('Star radius [solar unit]: %f') % ( opar[0]['radius'])) 
-        print ("Planet Radius/ Star Radius = {0:}".format(p))
-        print (("Transit depth: %e" ) % (np.max(transit)/np.min(transit)-1.))
-    if(Plot):
-        plt.figure(110)
-        plt.clf()
-        plt.title(StarName+ ', transit')
-        plt.axvline(x=transit_phases[0],color= 'r',ls='--')
-        plt.axvline(x=transit_phases[1],color='r',ls='--')
-        plt.axvline(x=transit_phases[2],color='r',ls='--')
-        plt.plot(time/86400.,(transit-1.)*100.)
-        plt.ylabel('Flux variation [%]')
-        plt.xlabel('Time [days]')
-        plt.draw()
-        # plt.figure(111)
-        # plt.clf()
-        # plt.title(StarName+ ', transit')
-        # plt.plot(time/86400.,z,'k.')
-        # plt.axvline(transit_phases[0],'r.')
-        # plt.axvline(transit_phases[1],'r+')
-        # plt.axvline(transit_phases[2],'r.')
-        # plt.xlabel('Time [days]')
-        # plt.draw()
-        # plt.show(block=True)
+TransitEnable = (Transit['Enable']>=1)
+SampleNumber = time.size
+gamma = np.array(Transit['LimbDarkeningCoefficients'],dtype=np.float64)
+StarRadius = opar[0]['radius']*sls.rsun*1e-5 # in km
 
 Systematics = Instrument['Systematics']
 SystematicDataVersion = int(Systematics['Version'])
@@ -1046,14 +1017,19 @@ for iMC in range(nMC):
             if (SaveHDF5):
                 spot_ts[:,i,1] = spot_component
         if (TransitEnable):
-            p = PlanetRadius / StarRadius
-            _, z,_,_ = generateZ(Transit['OrbitalPeriod'] * 86400., Transit['PlanetSemiMajorAxis'] * ua2Km,
-                             StarRadius, Sampling, IntegrationTime, group_idx * TimeShift, SampleNumber,
-                             Transit['OrbitalAngle'] * math.pi / 180., p)
-            if (len(gamma) == 4):
-                transit_component = tr.occultnonlin(z, p, gamma)
-            else:
-                transit_component = tr.occultquad(z, p, gamma, verbose=Verbose)
+            transit_component = transit_ts[:,i,1]
+            for i_planet in range(Transit['Enable']):
+                p = Transit['PlanetRadius'][i_planet] * jupiterRadius / StarRadius
+                _, z,_,_ = generateZ(Transit['OrbitalPeriod'][i_planet] * 86400., Transit['PlanetSemiMajorAxis'][i_planet] * ua2Km,
+                                 StarRadius, Sampling, IntegrationTime, group_idx * TimeShift, SampleNumber,
+                                 Transit['OrbitalAngle'][i_planet] * math.pi / 180., p)
+                if (len(gamma) == 4):
+                    i_transit_component = tr.occultnonlin(z, p, gamma)
+                else:
+                    i_transit_component = tr.occultquad(z, p, gamma, verbose=Verbose)
+                transit_component += i_transit_component  # Assume planet transits are additive i.e. simultaneous
+                                                          # tranits do not affect each other
+            transit_component -= (Transit['Enable'] - 1)  # Renormalize
             if (SaveHDF5):
                 transit_ts[:,i,1] = transit_component
         if(ExternalEnable):
