@@ -28,6 +28,8 @@ def get_parser():
     parser.add_argument('--seed', type=int, default=0,
                         help="Seed for random number generator. If 0, use value defined in configuration file. If 1 create"
                              "a seed from hash of config, otherwise use the value passed.")
+    parser.add_argument('--setup-only', action='store_const', const=True, default=False,
+                        help="Only generate configuration files.")
     return parser
 
 
@@ -37,24 +39,25 @@ def run(args):
     fname = args.fname
     gs_path = args.gs_path
     psls_args = args.psls_args
-    capture_output = args.tee
     seed = args.seed
 
     cg.setup(dirname, configname, gs_path, seed, fname)
-    
-    cmd = f'python {PSLS_DIR}/psls.py {psls_args} {fname}'
-    with temp_chdir(dirname):
-        print(os.path.abspath(os.path.curdir))
-        ierr = os.system(cmd)
-        if ierr != 0:
-            raise RuntimeError(f'Error running psls.py.')
-        if args.format:
-            psls_config = read_yaml(args.fname)
-            # Filename part from psls.py
-            StarName = "%10.10i" % psls_config['Star']['ID']
-            input_file = f'{StarName}.hdf5'
-            output_file = f'ref{StarName}.hdf5'
-            format_MSAP1_in(input_file, output_file)
+
+    if not args.setup_only:
+        cmd = f'python {PSLS_DIR}/psls.py {psls_args} {fname}'
+        with temp_chdir(dirname):
+            print(os.path.abspath(os.path.curdir))
+            ierr = os.system(cmd)
+            if ierr != 0:
+                raise RuntimeError(f'Error running psls.py.')
+            if args.format:
+                psls_config = read_yaml(args.fname)
+                # Filename part from psls.py
+                StarName = "%10.10i" % psls_config['Star']['ID']
+                input_file = f'{StarName}.hdf5'
+                output_file = f'ref{StarName}.hdf5'
+                format_MSAP1_in(input_file, output_file)
+
 
 if __name__ == "__main__":
     args = get_parser().parse_args()
