@@ -198,6 +198,7 @@ def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
 
     if gs_path is None:
         hist_num, prof_num, rot = config['Star']['ModelName'].split('_')
+        rot = rot[:4]
         gs_path = f'{os.path.dirname(__file__)}/../MESA/grid/{hist_num}/rot/profile{prof_num}.data.GYRE.{rot}.sgyre_l'
         if not os.path.exists(gs_path):
             raise FileNotFoundError(f'GyreSummary file not found: {gs_path}')
