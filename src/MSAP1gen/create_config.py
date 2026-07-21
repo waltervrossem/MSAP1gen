@@ -86,6 +86,18 @@ def update_config(new_config, old_config=None):
     return config
 
 
+def get_stellar_params_from_gyre(gs):
+    M = gs.get('M_star')[0] / cgs.SOLAR_MASS
+    R = gs.get('R_star')[0] / cgs.SOLAR_RADIUS
+    L = gs.get('L_star')[0] / cgs.SOLAR_LUMINOSITY
+    Teff = (L * cgs.SOLAR_LUMINOSITY / (4 * np.pi * cgs.STEFAN_BOLTZMANN * R**2 * cgs.SOLAR_RADIUS**2))**0.25
+
+    nu_max = cs.solar_seismic.nu_max * (M/R**2) / np.sqrt(Teff/astero_TEFF_SUN)
+    delta_nu = cs.solar_seismic.Delta_nu * np.sqrt(M/R**3)
+
+    return M, R, L, Teff, nu_max, delta_nu
+
+
 # Table 1 in Ball et al. 2018
 _table1_Ball2018 = np.array([
             [-3.710e0, 1.073e-3, 1.883e-4],
@@ -103,41 +115,76 @@ for l, _m in enumerate(np.linspace(-l, l, 2*l+1, dtype=int) for l in range(MAX_E
     for m in _m:
         _eps_ml_part[l][m] = math.factorial(l - abs(m)) / math.factorial(l + abs(m))
 
-def convert_gyre(inclination, gs_path, out_path):
-    gs = ld.GyreSummary(gs_path)
-    # Keep only modes between min and max freq l0
-    mask_l0 = gs.get('l') == 0
+
+def calc_mode_width_heights_Samadi19(gs, inclination):
+    M, R, L, Teff, nu_max, delta_nu = get_stellar_params_from_gyre(gs)
+    gamma_envelope = 0.66 * nu_max ** 0.88  # Mosser 2012
+
     nu = gs.get('Re(freq)')
-    nu_0_min, nu_0_max = nu[mask_l0][[0, -1]]
-    mask = (nu >= nu_0_min) & (nu <= nu_0_max)
-    gs.data = gs.data[mask]
+    ell = gs.get('l')
+    if 'm' not in gs.columns:
+        m = np.zeros_like(ell)
+    else:
+        m = gs.get('m')
+    mask_l0 = ell == 0
+
+    # Samadi 2019 section 3.1
+
+    # Gaussian envelope
+    G_nu = np.exp(-(nu - nu_max)**2/(gamma_envelope**2 / (4*np.log(2))))
+    # Mode visibilities Lund et al. 2026
+    V_l = np.array([1.0, 1.54, 0.51, 0.10])[ell]
+    # Relative azimuthal mode visibility
+    eps_lm = _eps_ml_part[ell, m] * assoc_legendre_p(ell, m, np.cos(inclination)).flatten() ** 2
+    # Corsaro 2013 scaling relations
+    A_max_bol_sol = 2.53
+    s = 0.748
+    r = 3.47
+    t = 1.27
+    lnbeta = 0.321
+    A_max_bol = A_max_bol_sol * np.exp((2*s - 3*t)*np.log(nu_max/cs.solar_seismic.nu_max) +
+                              (4*t - 4*s)*np.log(delta_nu/cs.solar_seismic.Delta_nu) +
+                              (5*s - 1.5*t - r + 0.2)*np.log(Teff/astero_TEFF_SUN) +
+                              lnbeta)
+    # RMS mode amplitude
+    A_max = A_max_bol * (Teff / 5934)**-0.8
+
+    # Mode widths
+    Gamma_max = 0.20 + 0.97 * (Teff/astero_TEFF_SUN)**13.0  # eq. 17
+    A = np.array([2, 6])[(nu<nu_max).astype(int)]
+    gamma_nu_nlm = 1 + A * (1 - np.exp(-(nu - nu_max)**2/((2*gamma_envelope)**2 / (4*np.log(2)))))
+    Gamma_nlm = Gamma_max * (ip.interp1d(gs.get('Re(freq)')[mask_l0], gs.get('E_norm')[mask_l0])(nu_max) / gs.get('E_norm')) * gamma_nu_nlm
+
+    # Mode height at nu_max
+    H_max = 2 * A_max**2 / (np.pi * Gamma_max)
+
+    H_nlm = G_nu * V_l**2 * eps_lm * H_max
+
+    return nu, H_nlm, Gamma_nlm
+
+def calc_mode_width_heights_Ball18(gs, inclination):
+    M, R, L, Teff, nu_max, delta_nu = get_stellar_params_from_gyre(gs)
+    gamma_envelope = 0.66 * nu_max ** 0.88  # Mosser 2012
+
     nu = gs.get('Re(freq)')
-    # Convert from MESA constants to platoconstants
-    M = gs.get('M_star')[0] / cgs.SOLAR_MASS
-    R = gs.get('R_star')[0] / cgs.SOLAR_RADIUS
-    L = gs.get('L_star')[0] / cgs.SOLAR_LUMINOSITY
-    Teff = (L * cgs.SOLAR_LUMINOSITY / (4 * np.pi * cgs.STEFAN_BOLTZMANN * R**2 * cgs.SOLAR_RADIUS**2))**0.25
-
-    nu_max = cs.solar_seismic.nu_max * (M/R**2) / np.sqrt(Teff/astero_TEFF_SUN)
-    delta_nu = cs.solar_seismic.Delta_nu * np.sqrt(M/R**3)
-
-    if os.path.exists(out_path):  # Already done
-        return M, R, L, Teff, nu_max, delta_nu
-
-    gamma_envelope = 0.66 * nu_max**0.88
-    sigma_envelope = gamma_envelope / FWHM_to_sigma
-
-    mask_l0 = gs.get('l') == 0
+    ell = gs.get('l')
+    if 'm' not in gs.columns:
+        m = np.zeros_like(ell)
+    else:
+        m = gs.get('m')
+    mask_l0 = ell == 0
     Q_nl = gs.get('E_norm') / ip.interp1d(gs.get('Re(freq)')[mask_l0], gs.get('E_norm')[mask_l0])(gs.get('Re(freq)'))
-
 
     # Using Ball et al. 2018 for heights and widths
     # https://ui.adsabs.harvard.edu/link_gateway/2018ApJS..239...34B/arxiv:1809.09108
 
     alpha, gamma_alpha, Delta_gamma_dip, nu_dip, W_dip = calc_width_params(Teff, nu_max)
     if gamma_alpha <= 0:
+        print(M, R, L, Teff, nu_max, delta_nu)
+        print(Teff, nu_max, alpha, gamma_alpha, Delta_gamma_dip, nu_dip, W_dip)
         raise ValueError(f'gamma_alpha < 0')
     if Delta_gamma_dip <= 0:
+        print(Teff, nu_max, alpha, gamma_alpha, Delta_gamma_dip, nu_dip, W_dip)
         raise ValueError(f'Delta_gamma_dip < 0')
     # Mode width Eq. 13
     ln_gamma = alpha * np.log(nu/nu_max) + np.log(gamma_alpha) + np.log(Delta_gamma_dip) / \
@@ -145,13 +192,6 @@ def convert_gyre(inclination, gs_path, out_path):
 
     ln_gamma = ln_gamma - np.log(Q_nl)
     gamma_nl = np.exp(ln_gamma)
-
-    # # Mode width
-    # # Using method described in Samadi 2019
-    # gamma_max = 0.20 + 0.97 * (Teff/astero_TEFF_SUN)**13.0  # Eq. 17 in Samadi 2019
-    # A = np.array([2, 6])[(nu<nu_max).astype(int)]
-    # # Eq. 15 in Samadi 2019
-    # gamma_nl = gamma_max / Q_nl * ( 1 + A*(1 - np.exp(-4*math.log(2) * ((nu - nu_max)/(2*gamma_envelope))**2)))
 
     # Mode height
 
@@ -166,16 +206,30 @@ def convert_gyre(inclination, gs_path, out_path):
     # Mode visibilities Lund et al. 2026
     Vl = np.array([1.0, 1.54, 0.51, 0.10])
 
-    ell = gs.get('l')
-    if 'm' not in gs.columns:
-        m = np.zeros_like(ell)
-    else:
-        m = gs.get('m')
-
     eps_lm = _eps_ml_part[ell, m] * assoc_legendre_p(ell, m, np.cos(inclination)).flatten()**2
 
     H_nl = 2 * Vl[ell] * eps_lm * A_rms_max**2 / (np.pi * gamma_nl) * np.exp(-4*math.log(2) * ((nu - nu_max)/gamma_envelope)**2)
     H_nl = H_nl / Q_nl
+
+    return nu, H_nl, gamma_nl
+
+
+def convert_gyre(inclination, gs_path, out_path):
+    gs = ld.GyreSummary(gs_path)
+    # Keep only modes between min and max freq l0
+    mask_l0 = gs.get('l') == 0
+    nu = gs.get('Re(freq)')
+    nu_0_min, nu_0_max = nu[mask_l0][[0, -1]]
+    mask = (nu >= nu_0_min) & (nu <= nu_0_max)
+    gs.data = gs.data[mask]
+
+    M, R, L, Teff, nu_max, delta_nu = get_stellar_params_from_gyre(gs)
+
+    if os.path.exists(out_path):  # Already done
+        return M, R, L, Teff, nu_max, delta_nu
+
+    nu, H_nl, gamma_nl = calc_mode_width_heights_Samadi19(gs, inclination)  # More stable
+    # nu, H_nl, gamma_nl = calc_mode_width_heights_Ball18(gs, inclination)
 
     freq = nu
     width = gamma_nl
