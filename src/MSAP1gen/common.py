@@ -12,6 +12,8 @@ else:
 if not os.path.exists(PSLS_DIR):
     raise NotADirectoryError(f'PSLS_DIR: {PSLS_DIR}')
 
+# JUPITER_RADIUS = (7.1492e9 + 6.6854e9) / 2
+JUPITER_RADIUS = 7.1492e9  # This value is used in psls.py
 
 @contextlib.contextmanager
 def temp_chdir(dirname):
