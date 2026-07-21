@@ -14,7 +14,7 @@ import common
 
 rng = np.random.default_rng(42)
 
-out_dir = f'{os.path.dirname(__file__)}/../../output'
+out_dir = f'{os.path.dirname(__file__)}/../../configs'
 
 Gmags = [7, 9, 11, 13]
 rel_rotations = [0.85, 1, 1.15]
@@ -111,7 +111,7 @@ def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_confi
 
 def generate_gyre_configs():
     grid_dir = f'{os.path.dirname(__file__)}/../MESA/grid'
-    gyre_out_dir = f'{grid_dir}/../base_gyre_in_rot'
+    gyre_out_dir = f'{out_dir}/gyre'
     if os.path.exists(gyre_out_dir):
         shutil.rmtree(gyre_out_dir)
     os.makedirs(gyre_out_dir)
@@ -139,4 +139,4 @@ for j, iters in enumerate([iters_general, iters_special_case]):
         spot_config = get_spot_config(num_spot)
         transit_config = get_transit_config(p, transit_type)
 
-        make_psls_config(f'{out_dir}/general/{star_id:08}.yaml', star_id, p, Vmag, rot_period, inclination, spot_config, transit_config)
+        make_psls_config(f'{out_dir}/{kind[j]}/{star_id:08}.yaml', star_id, p, Vmag, rot_period, inclination, spot_config, transit_config)

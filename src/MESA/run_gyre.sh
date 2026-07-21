@@ -11,4 +11,4 @@ fi
 # Need nproc --all as setting OMP_NUM_THREADS seems to set nproc to that value too
 export OMP_NUM_THREADS=2
 n_gyre=$(( $(nproc --all) / $OMP_NUM_THREADS ))
-find base_gyre_in_rot -name "*.in" | sort | xargs -n 1 -P$n_gyre ./do_one_gyre.sh
+find ../../configs/gyre/ -name "*.in" | sort | xargs -n 1 -P$n_gyre ./do_one_gyre.sh
