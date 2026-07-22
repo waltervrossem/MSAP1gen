@@ -195,12 +195,19 @@ def generate_gyre_configs():
                 handle.write(gyre_in)
 
 
-generate_gyre_configs()
-for j, iters in enumerate([iters_general, iters_special_case]):
-    for i, (p, Vmag, rel_rotation, inclination, num_spot, transit_type) in enumerate(iters):
-        star_id = int(j * 1e8) + i
-        rot_period = calc_rotation(p, rel_rotation)
-        spot_config = get_spot_config(num_spot)
-        transit_config = get_transit_config(p, transit_type)
+if __name__ == "__main__":
+    generate_gyre_configs()
+    kind = ['general', 'special']
+    for j, iters in enumerate([iters_general, iters_special_case]):
+        os.makedirs(f'{out_dir}/{kind[j]}', exist_ok=False)
+        for i, values in enumerate(iters):
+            if isinstance(values, dict):
+                pass
+            else:
+                p, Vmag, rel_rotation, inclination, spot_options, transit_type = values
+            star_id = int(j * 1e8) + i
+            rot_period = calc_rotation(p, rel_rotation)
+            spot_config = get_spot_config(spot_options, rot_period)
+            transit_config = get_transit_config(p, transit_type)
 
-        make_psls_config(f'{out_dir}/{kind[j]}/{star_id:08}.yaml', star_id, p, Vmag, rot_period, inclination, spot_config, transit_config)
+            make_psls_config(f'{out_dir}/{kind[j]}/{star_id:08}.yaml', star_id, p, Vmag, rot_period, inclination, spot_config, transit_config)
