@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import random
 
 import numpy as np
 import itertools
@@ -140,13 +141,68 @@ def get_transit_config(p, transit_type):
             'PlanetSemiMajorAxis': semi_major_axis,
             'OrbitalAngle': phase_deg}
 
+def gen_spots(activity, prot, nquarters):
+    """
+    Generate random spots, statistics depend on the selected 'activity' level
+    From gen_yaml_spots.py by Jordan Philidet
+    """
+    if activity == 'norot':
+        maxTimes, radiiValidated, lifetimesValidated, latitudes, longitudes, contrasts = [], [], [], [], [], []
+    else:
+        # Defining spot statistics
+        if activity in ['active', 'diffrot']:
+            meanRadius = 2.5
+            stdRadius = 0.5
+            nspotPerRot = 4
+            meanLifetime = 2.0
+            stdLifetime = 0.5
+            minLatitudes = 0.0
+            maxLatitudes = 60.0
+        else:
+            meanRadius = 1.5
+            stdRadius = 0.5
+            nspotPerRot = 1
+            meanLifetime = 1.0
+            stdLifetime = 0.5
+            minLatitudes = 0.0
+            maxLatitudes = 30.0
+        meanContrast = 0.5
+        stdContrast = 0.1
+        # Generating spots
+        durationLC = nquarters * 90.0
+        nrot = durationLC / prot
+        nspotFloat = nspotPerRot * nrot
+        nspot = int(nspotFloat)
+        maxTimes = [durationLC * ispot/(nspot-1) for ispot in range(nspot)]
+        radii = [random.gauss(mu=meanRadius, sigma=stdRadius) for _ in range(nspot)]
+        lifetimes = [prot * random.gauss(mu=meanLifetime, sigma=stdLifetime) for _ in range(nspot)]
+        if activity == 'diffrot':
+            randInts = np.random.choice(2, size=nspot)
+            latitudes = [0.0 if r == 0 else 60.0 for r in randInts]
+        else:
+            latitudes = [random.uniform(minLatitudes, maxLatitudes) for _ in range(nspot)]
+        longitudes = [random.uniform(0.0, 360.0) for _ in range(nspot)]
+        contrasts = [random.gauss(mu=meanContrast, sigma=stdContrast) for _ in range(nspot)]
+        radiiValidated = [radii[i] if radii[i]>=0.0 else meanRadius for i in range(nspot)]
+        lifetimesValidated = [lifetimes[i] if lifetimes[i]>=0.0 else prot * meanLifetime for i in range(nspot)]
+    return maxTimes, radiiValidated, lifetimesValidated, latitudes, longitudes, contrasts
 
-def get_spot_config(n_spot):
+
+def get_spot_config(spot_options, prot):
     config = {}
-    if n_spot == 0:
+    if spot_options == 0:
         config['Enable'] = 0
     else:
         config['Enable'] = 1
+        spotTimes, spotRadii, spotLifetimes, spotLatitudes, spotLongitudes, spotContrasts = gen_spots(spot_options, prot, 8)
+
+        config['Radius'] = spotRadii
+        config['Latitude'] = spotLatitudes
+        config['Longitude'] = spotLongitudes
+        config['Lifetime'] = spotLifetimes
+        config['TimeMax'] = spotTimes
+        config['Contrast'] = spotContrasts
+
         raise NotImplementedError
     return config
 
