@@ -63,7 +63,7 @@ def VmP(teff):
 
 def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
                   starRadius, SamplingTime, IntegrationTime, TimeShift, sampleNumber,
-                  orbitalStartAngleRad, p):
+                  orbitalStartAngleRad, p, TTV_period=0, TTV_amplitude=0, TTV_phase=0.0):
     '''
     :INPUTS:
     orbitalPeriodSecond = orbital period of the planet in second
@@ -75,6 +75,9 @@ def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
     sampleNumber = number of sample we want (==> z.size)
     orbitalStartAngleRad = orbital angle in radians where to start planet position
     p = rp / r*
+    TTV_period = TTV signal period in seconds
+    TTV_amplitude = TTV signal amplitude in seconds
+    TTV_phase = Initial TTV signal phase
     :OUTPUTS:
     time: the time series
     z: z = d / r*, is the normalized separation of the centers (sequence of positional offset values)
@@ -88,12 +91,10 @@ def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
     angles = angleIncrement * np.arange(sampleNumber) +  angle0
     # For occultquad computation we need that z < p+1
     time = np.arange(sampleNumber) * SamplingTime + IntegrationTime/2. + TimeShift
-    z = np.where(
-        np.sin(angles)>0,
-        np.abs((planetSemiMajorAxis / starRadius) * np.cos(angles)),
-        p+1
-    )
-    z = z.clip(min=0, max=p+1)
+
+    if TTV_period > 0:
+        TTV_angle_perturbation = TTV_amplitude/orbitalPeriodSecond * np.sin((2*math.pi / TTV_period)*time + math.pi/180 * TTV_phase)
+        angles = angles + TTV_angle_perturbation
 
     t0 = angle0*orbitalPeriodSecond/2./math.pi + orbitalPeriodSecond/4.
     tnb = int(math.floor((sampleNumber*SamplingTime-t0)/orbitalPeriodSecond)) + 1
@@ -107,6 +108,13 @@ def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
     t2 = phi2*orbitalPeriodSecond/2./math.pi/86400.
     t1 = (t0+t2)/2.
     transit_phases = [t0,t1,t2] # start, middle and end dates of the first transit
+
+    z = np.where(
+        np.sin(angles)>0,
+        np.abs((planetSemiMajorAxis / starRadius) * np.cos(angles)),
+        p+1
+    )
+    z = z.clip(min=0, max=p+1)
     return (time,z,transit_dates,transit_phases)
 
 
@@ -583,10 +591,10 @@ except getopt.GetoptError as err:
 Verbose = False
 Plot = False
 OutDir = '.'
-FullOutput =  False  # single camera light-curves are saved 
+FullOutput =  False  # single camera light-curves are saved
 MergedOutput = False  # LC from the same group of camera are averaged and  then averaged LC are merged(/interlaced)
 Pdf = False
-MC = False  # Monte-Carlo simulations on/off 
+MC = False  # Monte-Carlo simulations on/off
 nMC = 1 # Number of  Monte-Carlo simulations
 ExtendedPlots = False
 SavePSD = False
@@ -614,7 +622,7 @@ for o, a in opts:
         MC = True
         nMC = int(a)
     elif o == "--pdf":
-            Pdf = True    
+            Pdf = True
     elif o == "--extended-plots":
         ExtendedPlots = True
         Plot = True
@@ -643,14 +651,14 @@ if nargs < 1 :
     sys.exit()
 
 if(MC & Plot):
-    print ("The options -M and -P are not compatible. ")    
+    print ("The options -M and -P are not compatible. ")
     sys.exit()
 
 if(MC & Verbose):
-    print ("The options -M and -V are not compatible. ")    
+    print ("The options -M and -V are not compatible. ")
     sys.exit()
 
-if(Plot):   
+if(Plot):
     import matplotlib
     import matplotlib.pyplot as plt
 
@@ -658,7 +666,7 @@ if(not SaveHDF5):
     if (FullOutput & MergedOutput):
         print ("The options -m and -f are not compatible. If you want both use the --hdf5 option")
         sys.exit()
-  
+
 
 config=args[0]
 
@@ -671,14 +679,14 @@ stream.close()
 
 OutDir = os.path.normpath(OutDir) + '/'
 
-Star = cfg['Star'] 
+Star = cfg['Star']
 StarModelType = Star['ModelType']
 StarModelName = Star['ModelName']
 
 Osc = cfg['Oscillations']
-OscEnable = Osc['Enable'] 
+OscEnable = Osc['Enable']
 
-StarID = Star['ID']
+StarID = int(Star['ID'])
 StarName = ("%10.10i") % StarID
 StarTeff,StarLogg = Star['Teff'],Star['Logg']
 StarES = Star['ES']
@@ -691,7 +699,7 @@ if (UP):
     DPI = Osc['DPI']
     q = Osc['q']
     numax = Osc['numax']
-    delta_nu =  Osc['delta_nu']    
+    delta_nu =  Osc['delta_nu']
 else:
     sls.numaxref= 3050.
     StarModelDir = Star['ModelDir']
@@ -722,7 +730,7 @@ else:
         StarModelName,StarTeff,StarLogg,StarMass,StarRadius = search_model(StarModelDir,StarES,StarLogg,StarTeff,verbose=Verbose,plot=Plot)
         if(Verbose):
             print ('closest values found:')
-            print (('teff = %f ,log g = %f') % (StarTeff, StarLogg))   
+            print (('teff = %f ,log g = %f') % (StarTeff, StarLogg))
         StarFreqFile = StarModelDir + StarModelName + '.gsm'
 
     elif(StarModelType.lower() == 'grid'): #  new version of the model grid
@@ -747,20 +755,20 @@ else:
     logTeff = math.log10(StarTeff)
     SurfaceEffects = Osc['SurfaceEffects']
     if(SurfaceEffects and (StarFreqFileType>0)):
-        
+
         if(  pip(StarTeff,StarLogg,[[5700.,4.6],[6700.,4.4],[6500.,3.9],[5700,3.9]]) == False):
-            print ("surface effects: Teff and log g outside the table") 
-            sys.exit(1) 
+            print ("surface effects: Teff and log g outside the table")
+            sys.exit(1)
 
         # from Sonoi et al 2015, A&A, 583, 112  (Eq. 10 & 11)
         logma =  7.69 * logTeff -0.629 * StarLogg -28.5
         logb = -3.86*logTeff  + 0.235 * StarLogg + 14.2
-    
+
         a =  - 10.**logma
         b = 10.**logb
         if(Verbose):
             print (('Surface effects parameters, a = %f ,b = %f') %  (a,b))
-    
+
     else:
         a = 0.
         b = 1.
@@ -909,7 +917,7 @@ if(SystematicsEnable):
     if(Systematics['Seed']>0): # seed NOT controlled by the master seed
         seeds[1] = int(Systematics['Seed'])
     if(SystematicDataVersion>0):
-        DriftLevel = (Systematics['DriftLevel']).lower() 
+        DriftLevel = (Systematics['DriftLevel']).lower()
     else:
         DriftLevel = None
     if(SystematicDataVersion<2): # check if all quarters last 90 days:
@@ -920,7 +928,7 @@ if(SystematicsEnable):
     DataSystematic = sls.ExtractSystematicDataMagRange(
         Systematics['Table'],StarVpMag,version=SystematicDataVersion,DriftLevel=DriftLevel,
         Verbose=Verbose,seed=seeds[1])
-    
+
 # Total white-noise level ppm/Hz^(1/2), for a each single Camera
 RandomNoise =  Instrument['RandomNoise']
 RandomNoiseEnable = (RandomNoise['Enable']==1)
@@ -933,17 +941,17 @@ if RandomNoiseEnable:
         NSR = np.interp(StarPMag, NSR_Pmag, NSR_values, left=NSR_values[0], right=NSR_values[-1])
     elif (RandomNoise['Type'].lower() == 'plato_simu'):
         if(DataSystematic is None):
-            raise sls.SLSError("RandomNoise: when Type=PLATO_SIMU, systematic errors must also be activated")   
+            raise sls.SLSError("RandomNoise: when Type=PLATO_SIMU, systematic errors must also be activated")
         if(SystematicDataVersion<1):
-            raise sls.SLSError("RandomNoise: when Type=PLATO_SIMU, data version for systematic errors must be >0")   
+            raise sls.SLSError("RandomNoise: when Type=PLATO_SIMU, data version for systematic errors must be >0")
         NSR = -1.
     else:
-        raise sls.SLSError("unknown RandomNoise type: "+ RandomNoise['Type'] + ' Can be either USER, PLATO_SCALING or PLATO_SYSTEMATICS')        
+        raise sls.SLSError("unknown RandomNoise type: "+ RandomNoise['Type'] + ' Can be either USER, PLATO_SCALING or PLATO_SYSTEMATICS')
 else:
     NSR = 0.
 W =  NSR*math.sqrt(3600.) # ppm/Hr^(1/2) -> ppm/Hz^(1/2)
 opar[1]['white_noise'] = W #  ppm/Hz^(1/2)
-dt = opar[1]['sampling'] 
+dt = opar[1]['sampling']
 nyq = opar[1]['nyquist']
 
 if(Verbose and W>=0.):
@@ -1022,7 +1030,8 @@ for iMC in range(nMC):
                 p = Transit['PlanetRadius'][i_planet] * jupiterRadius / StarRadius
                 _, z,_,_ = generateZ(Transit['OrbitalPeriod'][i_planet] * 86400., Transit['PlanetSemiMajorAxis'][i_planet] * ua2Km,
                                  StarRadius, Sampling, IntegrationTime, group_idx * TimeShift, SampleNumber,
-                                 Transit['OrbitalAngle'][i_planet] * math.pi / 180., p)
+                                 Transit['OrbitalAngle'][i_planet] * math.pi / 180., p,
+                                 Transit['TTV_Period'][i_planet]*86400, Transit['TTV_Amplitude'][i_planet]*86400, Transit['TTV_Phase'][i_planet])
                 if (len(gamma) == 4):
                     i_transit_component = tr.occultnonlin(z, p, gamma)
                 else:
@@ -1264,14 +1273,14 @@ for iMC in range(nMC):
         StarName = ("%7.7i%3.3i") % (StarID,iMC)
     else:
         StarName = ("%10.10i") % StarID
-            
+
     if(SaveHDF5):
         fname = OutDir + StarName+ '.hdf5'
     else:
         fname = OutDir + StarName + '.dat'
     if(Verbose):
         print ('saving the simulated light-curve as: %s' % fname)
-    
+
     def ppar(par):
         n = len(par)
         i = 0
@@ -1282,9 +1291,9 @@ for iMC in range(nMC):
                 s += ', '
             i += 1
         return s
-    
+
     hd = ''
-    hd += ('StarID = %10.10i\n') % (StarID)  
+    hd += ('StarID = %10.10i\n') % (StarID)
     hd += ("Master_seed = %i\n") % (MasterSeed)
     hd += ("Version = %s\n") % (__version__)
 
@@ -1463,7 +1472,7 @@ if(Plot):
     else:
         psdr = 0.
     psdme = 0.5*mps_nf +  psdr # mean expected PSD for all camera
-    
+
     plt.plot(num,psdm,'k',lw=2,label='simulated (mean)') # simulated spectrum, all camera
     if (SystematicsEnable):
             plt.plot(num,psdscm,'m',label='systematics (mean)')
@@ -1474,12 +1483,12 @@ if(Plot):
     if(W>0.):
         plt.plot(f[1:], psdr[1:],'g',lw=2,label='random noise') # all Camera
 #    plt.plot(f[1:], 0.5*( (mps_SC[1:]  - 2*W**2*1e-6/NCamera) /(NGroup)),'m',lw=2,label='systematics') # all Camera
-    
+
     fPT,psdPT = platotemplate(Duration, dt=1., V=11., n=NCamera*NGroup, residual_only=True)
     plt.plot(fPT[1:]*1e6, psdPT[1:]*1e-6,'k',ls='--',lw=2,label='systematics (requierements)')
-    
+
     plt.loglog()
-    plt.xlabel(r'$\nu$ [$\mu$Hz]')  
+    plt.xlabel(r'$\nu$ [$\mu$Hz]')
     plt.ylabel(r'[ppm$^2$/$\mu$Hz]')
     plt.axis(ymin=psdme[-1]/100.,xmax=np.max(single_nu))
     plt.legend(loc=0)
@@ -1493,19 +1502,19 @@ if(Plot):
     plt.clf()
     plt.title(StarName+ ' Averaged LC')
     plt.plot(single_ts[:,0]/86400.,single_ts[:,1]*1e-4,'grey')
-        
+
     m = int( round(max(3600.,Sampling)/Sampling))
     p = int(nt/m)
     tsm = rebin1d(single_ts[0:p*m,1],p)/float(m)
     timem = rebin1d(single_ts[0:p*m,0],p)/float(m)
-    
-        
+
+
     plt.plot(timem/86400.,tsm*1e-4,'k')
-    plt.xlabel('Time [days]')  
+    plt.xlabel('Time [days]')
     plt.ylabel('Relative flux variation [%]')
     if(Pdf):
         fname = OutDir + StarName+ '_fig5.pdf'
-    else: 
+    else:
         fname = OutDir + StarName+ '_fig5.png'
     plt.savefig(fname)
 
@@ -1516,30 +1525,30 @@ if(Plot):
         plt.clf()
         plt.title(StarName+ ' PSD (zoom)')
         numax =  opar[2]['numax']
-        Hmax = opar[2]['Hmax']  
+        Hmax = opar[2]['Hmax']
         u =     (num> numax*0.5) & (num < numax*1.5)
         plt.plot(num[u],psdm[u],'k',lw=2) # simulated spectrum, all camera
-    
+
         plt.loglog()
-        plt.xlabel(r'$\nu$ [$\mu$Hz]')  
-        plt.ylabel(r'[ppm$^2$/$\mu$Hz]')    
+        plt.xlabel(r'$\nu$ [$\mu$Hz]')
+        plt.ylabel(r'[ppm$^2$/$\mu$Hz]')
         if(Pdf):
             fname = OutDir + StarName+ '_fig2.pdf'
         else:
             fname = OutDir + StarName+ '_fig2.png'
         plt.savefig(fname)
-    
-    
+
+
         plt.figure(103)
         plt.clf()
         plt.title(StarName+ ' PSD Stellar components')
         u =     (f> numax*0.5) & (f < numax*1.5)
         plt.plot(f[u], 0.5*mps_nf[u],'r',lw=2,label='star') # noise free
-        plt.xlabel(r'$\nu$ [$\mu$Hz]')  
-        plt.ylabel(r'[ppm$^2$/$\mu$Hz]')    
+        plt.xlabel(r'$\nu$ [$\mu$Hz]')
+        plt.ylabel(r'[ppm$^2$/$\mu$Hz]')
         if(Pdf):
             fname = OutDir + StarName+ '_fig4.pdf'
-        else: 
+        else:
             fname = OutDir + StarName+ '_fig4.png'
         plt.savefig(fname)
 
@@ -1552,7 +1561,7 @@ if(Plot):
                     plt.plot(full_ts[:,i,j,0]/86400.,full_ts_SC[:,i,j,1])
             plt.plot(single_ts[:,0]/86400.,single_ts_SC,'k',lw=2)
             plt.xlabel('Time [days]')
-    
+
     plt.draw()
     plt.show()
 
