@@ -29,9 +29,30 @@ hists = [ld.History(f'../MESA/grid/{i:04}/LOGS/history.data') for i in range(11)
 profs = []
 for h in hists:
     profs.extend(ld.load_profs(h))
+c_mesa = uf.get_constants(hists[0])
 
-iters_general = itertools.product(profs, Gmags, rel_rotations, inclinations, num_spots, transits)
+iters_general = itertools.product(profs, Vmags, rel_rotations, inclinations, num_spots, transits)
+num_general = np.prod(list(map(len, [profs, Vmags, rel_rotations, inclinations, num_spots, transits])))
 iters_special_case = []
+def mass_to_radius(mass):
+    # https://www.aanda.org/articles/aa/full_html/2024/06/aa48690-23/aa48690-23.html
+    if mass < 4.37:
+        radius = 1.02 * mass ** 0.27
+    else:# mass >= 4.37 and mass < 127:
+        radius = 0.56 * mass ** 0.67
+    # else:
+    #     radius = 18.6 * mass ** -0.06
+    return radius
+
+
+def radius_to_mass(radius):
+    if radius < 1.504:
+        mass = (radius/1.02) ** (1/0.27)
+    else:# radius >= 1.504 and radius < 13.91:
+        mass = (radius / 0.56) ** (1/0.67)
+    return mass
+
+
 def S_logP_l(logP, wP, logP_break):
     return 1 / (1 + np.exp(-(logP_break - logP)/wP))
 
