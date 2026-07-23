@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import shutil
 import tqdm
 import multiprocessing as mp
@@ -14,6 +15,9 @@ from platoconstants import cs
 from scipy import interpolate as ip
 
 import common
+
+sys.path.append(f'{os.path.dirname(__file__)}/../psls/psls-1.9')
+import psls
 
 rng = np.random.default_rng(42)
 
@@ -210,8 +214,15 @@ def gen_spots(activity, prot, nquarters):
     Generate random spots, statistics depend on the selected 'activity' level
     From gen_yaml_spots.py by Jordan Philidet
     """
+    config = {}
+    config['Radius'] = []
+    config['Latitude'] = []
+    config['Longitude'] = []
+    config['Lifetime'] = []
+    config['TimeMax'] = []
+    config['Contrast'] = []
     if activity == 'norot':
-        maxTimes, radiiValidated, lifetimesValidated, latitudes, longitudes, contrasts = [], [], [], [], [], []
+        pass
     else:
         # Defining spot statistics
         if activity in ['active', 'diffrot']:
@@ -237,19 +248,105 @@ def gen_spots(activity, prot, nquarters):
         nrot = durationLC / prot
         nspotFloat = nspotPerRot * nrot
         nspot = int(nspotFloat)
-        maxTimes = [durationLC * ispot/(nspot-1) for ispot in range(nspot)]
-        radii = [random.gauss(mu=meanRadius, sigma=stdRadius) for _ in range(nspot)]
-        lifetimes = [prot * random.gauss(mu=meanLifetime, sigma=stdLifetime) for _ in range(nspot)]
+        maxTimes = durationLC / (nspot - 1) * np.arange(nspot)
+        radii = rng.normal(meanRadius, stdRadius, nspot)
+        lifetimes = prot * rng.normal(meanLifetime, stdLifetime, nspot)
         if activity == 'diffrot':
-            randInts = np.random.choice(2, size=nspot)
-            latitudes = [0.0 if r == 0 else 60.0 for r in randInts]
+            latitudes = rng.choice([minLatitudes, maxLatitudes], size=nspot)
         else:
-            latitudes = [random.uniform(minLatitudes, maxLatitudes) for _ in range(nspot)]
-        longitudes = [random.uniform(0.0, 360.0) for _ in range(nspot)]
-        contrasts = [random.gauss(mu=meanContrast, sigma=stdContrast) for _ in range(nspot)]
-        radiiValidated = [radii[i] if radii[i]>=0.0 else meanRadius for i in range(nspot)]
-        lifetimesValidated = [lifetimes[i] if lifetimes[i]>=0.0 else prot * meanLifetime for i in range(nspot)]
-    return maxTimes, radiiValidated, lifetimesValidated, latitudes, longitudes, contrasts
+            latitudes = rng.uniform(minLatitudes, maxLatitudes, nspot)
+        longitudes = rng.uniform(0.0, 360.0, nspot)
+        contrasts = rng.normal(meanContrast, stdContrast, nspot)
+
+        # Only positive radii and lifetimes
+        radii[radii <= 0] = meanRadius
+        lifetimes[lifetimes <= 0] = prot * meanLifetime
+
+        config['Radius'] = radii
+        config['Latitude'] = latitudes
+        config['Longitude'] = longitudes
+        config['Lifetime'] = lifetimes
+        config['TimeMax'] = maxTimes
+        config['Contrast'] = contrasts
+        config = check_spots(config, prot)
+
+    return config
+
+
+def check_spots(config, prot):
+    # Check for and resolve overlapping spots as psls can't handle them
+    Spot = config.copy()
+    Spot['dOmega'] = 0
+    Spot['MuStar'] = 0.59
+    Spot['MuSpot'] = 0.78
+    Spot['Modulation'] = 0
+    Star = {'SurfaceRotationPeriod': prot,
+            'Inclination': 90}
+    Duration = 8 * 90
+    spot = psls.prepare_spot_parameters(Star, Spot, Duration, seed=0, verbose=False)
+    defoo = params = spot
+    prot = np.exp(params[1])
+
+    # cadence used for the spot modelling (in days)
+    cadence_lc = prot / 100.  # in days
+
+    # number of points in the long cadence  light curve
+    n_lc = int(np.ceil(Duration / cadence_lc))
+
+    # time in days (for the long cadence LC)
+    t = np.arange(n_lc) * cadence_lc
+
+    nspots = int(params[0])
+    inispots = [psls.spotintime.OneSpot(t, defoo[1], Domega=defoo[3], rsp=defoo[4], latsp=defoo[4 + nspots],
+                                        lonsp=defoo[4 + 2 * nspots], t0=defoo[4 + 3 * nspots],
+                                        lifetime=defoo[4 + 4 * nspots],
+                                        fs=defoo[4 + 5 * nspots])]
+    if nspots > 1:
+        for i in range(1, nspots):
+            ispot = psls.spotintime.OneSpot(t, defoo[1], Domega=defoo[3], rsp=defoo[4 + i], latsp=defoo[4 + nspots + i],
+                                            lonsp=defoo[4 + 2 * nspots + i], t0=defoo[4 + 3 * nspots + i],
+                                            lifetime=defoo[4 + 4 * nspots + i], fs=defoo[4 + 5 * nspots + i])
+            inispots.append(ispot)
+    else:
+        return config
+    counter = {_:0 for _ in range(nspots)}
+    have_overlap = []
+    for (s1, s2) in itertools.combinations(range(nspots), 2):
+        if psls.spotintime.testoverlap(inispots[s1], inispots[s2]):
+            have_overlap.append((s1, s2))
+            counter[s1] = 1
+    while len(have_overlap) > 0:
+        for s1, s2 in have_overlap:
+            new_lon = (rng.uniform(5, 355) + np.rad2deg(inispots[s1].psi0)) % 360  # move away from overlap
+            config['Longitude'][s1] = new_lon
+            inispots[s1].psi0 = np.radians(new_lon)
+            if (counter[s1] % 5) == 0:
+                config['Latitude'][s1] = rng.uniform(0, 60)
+                inispots[s1].chi = np.radians(config['Latitude'][s1])
+            Omspot = 2.0 * np.pi * (
+                        1.0 - inispots[s1].Domega * np.sin(inispots[s1].chi) * np.sin(inispots[s1].chi)) / prot
+            inispots[s1].psi = inispots[s1].psi0 + (t - inispots[s1].t0) * Omspot
+
+        have_overlap_new = []
+        for s1, _ in have_overlap:
+            for s2 in range(nspots):
+                if s1 == s2:
+                    continue
+                if psls.spotintime.testoverlap(inispots[s1], inispots[s2]):
+                    have_overlap_new.append((s1, s2))
+                    counter[s1] += 1
+        if counter[s1] >= 100:  # Can't find suitable spot location so will remove it
+            inispots[s1].alpha = 0
+            config['Radius'][s1] = 0
+        have_overlap = have_overlap_new
+    mask = config['Radius'] != 0
+    config['Radius'] = config['Radius'][mask]
+    config['Latitude'] = config['Latitude'][mask]
+    config['Longitude'] = config['Longitude'][mask]
+    config['Lifetime'] = config['Lifetime'][mask]
+    config['TimeMax'] = config['TimeMax'][mask]
+    config['Contrast'] = config['Contrast'][mask]
+    return config
 
 
 def get_spot_config(spot_options, prot):
@@ -258,16 +355,7 @@ def get_spot_config(spot_options, prot):
         config['Enable'] = 0
     else:
         config['Enable'] = 1
-        spotTimes, spotRadii, spotLifetimes, spotLatitudes, spotLongitudes, spotContrasts = gen_spots(spot_options, prot, 8)
-
-        config['Radius'] = spotRadii
-        config['Latitude'] = spotLatitudes
-        config['Longitude'] = spotLongitudes
-        config['Lifetime'] = spotLifetimes
-        config['TimeMax'] = spotTimes
-        config['Contrast'] = spotContrasts
-
-        raise NotImplementedError
+        config.update(gen_spots(spot_options, prot, 8))
     return config
 
 
@@ -287,7 +375,8 @@ def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_confi
     config['Transit'] = transit_config
 
     # Generate hash
-    config['Observation']['MasterSeed'] = hash(f'{i}{Vmag}{rot_period}{inclination}') % 2**32
+    # config['Observation']['MasterSeed'] = hash(f'{i}{Vmag}{rot_period}{inclination}') % 2**32
+    config['Observation']['MasterSeed'] = hash(f'{pnum}{hnum}') % 2 ** 32
 
     with open(path, 'w') as f:
         f.write(common.make_yaml_str(config))
@@ -307,7 +396,6 @@ def generate_gyre_configs():
         for i, rel_rot in enumerate(rel_rotations):
             rot_period = calc_rotation(profile, rel_rot)
             fname = f'{hnum}_{pnum}_{rot_period:.1f}.in'
-            # fname = f'{hnum}_{pnum}_{["lo", "med", "hi"][i]}.in'
             rot_freq = 1/rot_period
             new_omega_rot_str = f'omega_rot = {rot_freq:g}'.replace('e-', 'd-').replace('e+', 'd+')
             gyre_in = default_gyre_in.replace('omega_rot = 0d0', new_omega_rot_str)
