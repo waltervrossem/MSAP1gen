@@ -18,7 +18,7 @@ astero_TEFF_SUN = 5777
 LOGG_SUN = math.log10(cgs.SOLAR_MASS_PARAMETER) - 2.*math.log10(cgs.SOLAR_RADIUS)
 FWHM_to_sigma = 2*np.sqrt(2*np.log(2))
 MAX_ELL = 3
-
+this_dir = f'{os.path.dirname(__file__)}'
 
 def replace_PSLS_DIR(config):
     config['Instrument']['Systematics']['Table'] = config['Instrument']['Systematics']['Table'].replace('PSLS_DIR', PSLS_DIR)
@@ -28,7 +28,7 @@ def replace_PSLS_DIR(config):
 
 
 def new_default_yaml():
-    new = read_yaml()
+    new = read_yaml(f'{this_dir}/default.yaml')
     new = replace_PSLS_DIR(new)
     return new
 
@@ -253,7 +253,7 @@ def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
     if gs_path is None:
         hist_num, prof_num, rot = config['Star']['ModelName'].split('_')
         rot = rot[:4]
-        gs_path = f'{os.path.dirname(__file__)}/../MESA/grid/{hist_num}/rot/profile{prof_num}.data.GYRE.{rot}.sgyre_l'
+        gs_path = f'{this_dir}/../MESA/grid/{hist_num}/rot/profile{prof_num}.data.GYRE.{rot}.sgyre_l'
         if not os.path.exists(gs_path):
             raise FileNotFoundError(f'GyreSummary file not found: {gs_path}')
 

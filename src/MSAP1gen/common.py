@@ -35,12 +35,15 @@ def make_yaml_str(config, indent=0):
         else:
             if isinstance(value, np.ndarray):
                 value = value.tolist()
+            elif isinstance(value, np.float64):
+                value = float(value)
+
             out += f"{' '*indent} {value}\n"
         indent -= 4
     return out
 
 
-def read_yaml(path='default.yaml'):
+def read_yaml(path):
     with open(path, 'r') as handle:
         if parse_version(yaml.__version__) < parse_version("5.0"):
             dat = yaml.load(handle)
