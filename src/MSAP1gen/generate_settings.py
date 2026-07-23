@@ -2,7 +2,8 @@
 
 import os
 import shutil
-import random
+import tqdm
+import multiprocessing as mp
 
 import numpy as np
 import itertools
@@ -21,8 +22,7 @@ out_dir = f'{os.path.dirname(__file__)}/../../configs'
 Gmags = [7, 9, 11, 13]
 rel_rotations = [0.85, 1, 1.15]
 inclinations = [15, 30, 60, 90]
-num_spots = [0, ]
-transits = ['single_deep', 'single_shallow', 'triple']
+num_spots = [0, 'active']
 transits = ['single_deep', 'single_shallow', 'triple', 'ttv']
 
 
@@ -275,7 +275,7 @@ def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_confi
     config = {'Observation': {},
               'Star': {},
               'Activity': {}}
-    config['Star']['ID'] = i
+    config['Star']['ID'] = f'{i:08}'
     config['Star']['Mag'] = Vmag
     config['Star']['SurfaceRotationPeriod'] = rot_period
     config['Star']['Inclination'] = inclination
@@ -315,19 +315,31 @@ def generate_gyre_configs():
                 handle.write(gyre_in)
 
 
+def worker(values):
+    i, p, Vmag, rel_rotation, inclination, spot_options, transit_type = values
+    star_id = int(j * 1e8) + i
+    rot_period = calc_rotation(p, rel_rotation)
+    spot_config = get_spot_config(spot_options, rot_period)
+    transit_config = get_transit_config(p, transit_type)
+
+    make_psls_config(f'{out_dir}/{kind[j]}/{star_id:08}.yaml', star_id, p, Vmag, rot_period, inclination, spot_config,
+                     transit_config)
+
+
 if __name__ == "__main__":
+    nworker = mp.cpu_count()
+    os.environ['OMP_NUM_THREADS'] = '1'
     generate_gyre_configs()
     kind = ['general', 'special']
-    for j, iters in enumerate([iters_general, iters_special_case]):
-        os.makedirs(f'{out_dir}/{kind[j]}', exist_ok=False)
-        for i, values in enumerate(iters):
-            if isinstance(values, dict):
-                pass
-            else:
-                p, Vmag, rel_rotation, inclination, spot_options, transit_type = values
-            star_id = int(j * 1e8) + i
-            rot_period = calc_rotation(p, rel_rotation)
-            spot_config = get_spot_config(spot_options, rot_period)
-            transit_config = get_transit_config(p, transit_type)
+    for j, iters in enumerate([iters_general]):#, iters_special_case]):
+        print(f'Making {kind[j]} configs.')
+        os.makedirs(f'{out_dir}/{kind[j]}', exist_ok=True)
+        if kind == 'general':
+            num = num_general
+        else:
+            num = None
 
-            make_psls_config(f'{out_dir}/{kind[j]}/{star_id:08}.yaml', star_id, p, Vmag, rot_period, inclination, spot_config, transit_config)
+        args = [[i, *a] for i, a in enumerate(iters)]
+        with mp.Pool(nworker) as pool, tqdm.tqdm(total=len(args)) as pbar:
+            for res in pool.imap_unordered(worker, args):
+                pbar.update(1)
