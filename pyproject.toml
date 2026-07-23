@@ -25,7 +25,8 @@ dependencies = [
     "h5py",
     "platoconstants@git+https://git.ias.u-psud.fr/plato_pdc_public/platoconstants.git",
     "wsssss>=0.7.7",
-    "packaging"
+    "packaging",
+    "tqdm"
 ]
 
 classifiers = [
