@@ -69,6 +69,10 @@ class OneSpot:
 
         self.psi = self.psi0 + (t - self.t0) * Omspot
         self.duree = np.exp(-(np.log(2.0) * (t - self.t0) / (np.exp(lnprot)*lifetime)) ** 2.0)  # Mosser 2009
+        mask = self.duree < 1e-9
+        self.t_start = t[~mask][0]
+        self.t_end = t[~mask][-1]
+        self.Domega = Domega
 
         self.fs = fs
         self.t = t
@@ -148,12 +152,25 @@ def dimlist(listspot, incl, mue, mus, modul):
     return dimmings
 
 def testoverlap(tach1, tach2):
+
+    # No overlap in time
+    if (tach1.t_end <= tach2.t_start) or (tach2.t_end <= tach1.t_start):
+        return False
+
     a1 = tach1.alpha
     a2 = tach2.alpha
-    p1 = tach1.psi
-    p2 = tach2.psi
     c1 = tach1.chi
     c2 = tach2.chi
+
+    if a1 == 0 or a2 == 0:  # One spot has zero radius
+        return False
+
+    if tach1.Domega != tach2.Domega:  # Spots rotate at different speeds
+        p1 = tach1.psi
+        p2 = tach2.psi
+    else:  # Spots rotate at same speed, so p2 - p1 is constant
+        p1 = tach1.psi[0]
+        p2 = tach2.psi[0]
 
     S = np.arccos(np.sin(c1) * np.sin(c2) + np.cos(c1) * np.cos(c2) * np.cos(p2 - p1))
 
@@ -170,9 +187,11 @@ def paramtolc(defoo, t, nspots, verbose=False):
                        lifetime=defoo[4 + 4 * nspots + i], fs=defoo[4 + 5 * nspots + i])
             inispots.append(ispot)
 
-    for combi in itt.combinations(inispots, 2):
-        if np.any(testoverlap(combi[0], combi[1])):
-            print("Overlapping spots, aborting")
+    for i1, i2 in itt.combinations(range(nspots), 2):
+        s1 = inispots[i1]
+        s2 = inispots[i2]
+        if np.any(testoverlap(s1, s2)):
+            print(f"Overlapping spots {i1} {i2}, aborting")
             ovl = 1
             return 0, inispots, ovl
     else:
