@@ -23,6 +23,7 @@ rel_rotations = [0.85, 1, 1.15]
 inclinations = [15, 30, 60, 90]
 num_spots = [0, ]
 transits = ['single_deep', 'single_shallow', 'triple']
+transits = ['single_deep', 'single_shallow', 'triple', 'ttv']
 
 
 hists = [ld.History(f'../MESA/grid/{i:04}/LOGS/history.data') for i in range(11)]
@@ -124,43 +125,85 @@ def calc_rotation(p, rel_rotation):
 
 def get_transit_config(p, transit_type):
     mass = p.header['star_mass']
+    TTV_period = 0.0
+    TTV_amplitude = 0.0
+    TTV_phase = 0.0
     if transit_type == 'single_deep':
         num = 1
-        radius = 1
-        period = 20
+        radius = rng.uniform(1, 2.5)
+        period = rng.uniform(1, 20)
         phase_deg = rng.uniform(0, 360)
 
     elif transit_type == 'single_shallow':
         num = 1
-        radius = 0.1
-        period = 100
+        radius = rng.uniform(0.5, 3) * cgs.terrestrial.EARTH_RADIUS / common.JUPITER_RADIUS
+        period = rng.uniform(3, 200)
         phase_deg = rng.uniform(0, 360)
 
     elif transit_type == 'triple':
         num = 3
-        radius = [0.5, 1.0, 0.1]
-        period = np.array([10., 50, 300])
-        phase_deg = rng.uniform(0, 360, 3)
-
-    elif transit_type == 'special1':
-        raise NotImplementedError
-
-    elif transit_type == 'special2':
-        raise NotImplementedError
+        radius = []
+        period = []
+        phase_deg = []
+        for i in range(num):
+            transit = get_transit_config(p,  ['single_shallow', 'single_shallow', 'single_deep'][i])
+            radius.append(transit['PlanetRadius'])
+            period.append(transit['OrbitalPeriod'])
+            phase_deg.append(transit['OrbitalAngle'])
+        period = np.array(period)
 
     elif transit_type == 'ttv':
-        raise NotImplementedError
+        num = 1
+        radius = rng.uniform(0.5, 3)  # Earth radii
+        period = rng.uniform(1, 20)
+        phase_deg = rng.uniform(0, 360)
 
+        period_small = rng.uniform(1, 20)
+        radius_small = rng.uniform(0.5, 3)
+        radius_large = rng.uniform(1, 2.5) * common.JUPITER_RADIUS/cgs.terrestrial.EARTH_RADIUS
+        mass_ratio = radius_to_mass(radius_large) * cgs.terrestrial.EARTH_MASS / (mass * cgs.solar.SOLAR_MASS)
+        j = int(rng.choice([2, 3], 1)[0])
+        Delta = rng.uniform(-0.06, 0.06)  # https://arxiv.org/pdf/1308.0996  after eq 1
+
+        inout = rng.choice([0, 1], 2, replace=False)
+        radius_in, radius_out = np.array([radius_small, radius_large])[inout]
+        if inout[0] == 0:  # Small planet is inner planet
+            period_large = (Delta + 1) * period_small * j / (j - 1)
+            period_in = period_small
+            period_out = period_large
+            f = 1
+            TTV_amplitude = period_in * mass_ratio * abs(f/Delta) / (np.pi * j ** (2 / 3) * (j - 1) ** (1 / 3))
+        else:
+            period_large = period_small / (Delta+1) * (j - 1) / j
+            period_out = period_small
+            period_in = period_large
+            g = 1
+            TTV_amplitude = period_out * mass_ratio * abs(g/Delta) / (np.pi * j)
+
+        TTV_period = period_out / abs(j*Delta)
+        TTV_phase = rng.uniform(0, 360)
     else:
         raise Exception(f'Unknown transit type: {transit_type}')
 
     semi_major_axis = (mass * (period/365.25636)**2) ** (1/3)
 
+    if transit_type != 'triple':
+        radius = [radius]
+        period = [period]
+        semi_major_axis = [semi_major_axis]
+        phase_deg = [phase_deg]
+        TTV_period = [TTV_period]
+        TTV_amplitude = [TTV_amplitude]
+        TTV_phase = [TTV_phase]
+
     return {'Enable': num,
             'PlanetRadius':radius,
             'OrbitalPeriod': period,
             'PlanetSemiMajorAxis': semi_major_axis,
-            'OrbitalAngle': phase_deg}
+            'OrbitalAngle': phase_deg,
+            'TTV_Period': TTV_period,
+            'TTV_Amplitude': TTV_amplitude,
+            'TTV_Phase': TTV_phase}
 
 def gen_spots(activity, prot, nquarters):
     """
