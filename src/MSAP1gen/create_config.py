@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import math
 import os
+import shutil
+
 import numpy as np
 import yaml
 import copy
@@ -216,6 +218,9 @@ def calc_mode_width_heights_Ball18(gs, inclination):
 
 def convert_gyre(inclination, gs_path, out_path):
     gs = ld.GyreSummary(gs_path)
+
+    if check_gs(gs):
+        raise ValueError(f'GyreSummary {gs_path} has missing modes.')
     # Keep only modes between min and max freq l0
     mask_l0 = gs.get('l') == 0
     nu = gs.get('Re(freq)')
@@ -240,8 +245,27 @@ def convert_gyre(inclination, gs_path, out_path):
     return M, R, L, Teff, nu_max, delta_nu
 
 
+def check_gs(gs):
+    if gs is None:
+        return True
+    have_missing = False
+    for l in [1, 2, 3]:
+        for m in np.arange(-l, l+1):
+            mask = (gs.data.l == l) & (gs.data.m == m)
+            n_p = gs.data.n_p[mask]
+            n_g = gs.data.n_g[mask]
+            n_pg = gs.data.n_pg[mask]
+            if l == 1:
+                mask_ng = n_p < n_g
+                have_missing = not (np.all(np.diff(n_pg[mask_ng]) == 1) and np.all(np.diff(n_pg[~mask_ng]) == 1))
+            else:
+                have_missing = not np.all(np.diff(n_pg) == 1)
+            if have_missing:
+                return have_missing
+    return have_missing
+
+
 def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
-    os.makedirs(dirname, exist_ok=False)
     if isinstance(config, list):
         _config = None
         for sub_config in config:
@@ -257,12 +281,17 @@ def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
         if not os.path.exists(gs_path):
             raise FileNotFoundError(f'GyreSummary file not found: {gs_path}')
 
-    if gs_path is not None:
-        M, R, L, Teff, nu_max, Delta_nu = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{config['Star']['ModelName']}")
-        config['Star']['Logg'] = float(np.log10(M/R**2) + LOGG_SUN)
-        config['Star']['Teff'] = float(Teff)
-        config['Oscillations']['numax'] = nu_max
-        config['Oscillations']['deltanu'] = Delta_nu
+    os.makedirs(dirname, exist_ok=False)
+    try:
+        if gs_path is not None:
+            M, R, L, Teff, nu_max, Delta_nu = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{config['Star']['ModelName']}")
+            config['Star']['Logg'] = float(np.log10(M/R**2) + LOGG_SUN)
+            config['Star']['Teff'] = float(Teff)
+            config['Oscillations']['numax'] = nu_max
+            config['Oscillations']['deltanu'] = Delta_nu
+    except ValueError:
+        shutil.rmtree(dirname, ignore_errors=True)
+        raise
 
     if seed == 0:
         pass
