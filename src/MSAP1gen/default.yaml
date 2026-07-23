@@ -87,7 +87,7 @@ Activity :
   # and the inclination angle of the rotation axis ; these both parameters are fixed
   # in the "Star" section of the configuration file (see above).
   Spot:
-    Enable: 1
+    Enable: 0
     dOmega: 0. # Differential rotation, dimensionless
     MuStar: 0.59 # Limb darkening coefficient of the star (a linear limb darkening law is assumed)
     MuSpot: 0.78 # Limb darkening coefficient of the spot
@@ -118,7 +118,7 @@ Granulation :
 
 # Planetary Transit (Mandel & Agol (2002)'s algorithm)
 Transit : 
-  Enable: 1
+  Enable: 0
   PlanetRadius : 0.5   # in jupiter radii
   OrbitalPeriod : 10.  # in days
   PlanetSemiMajorAxis : 1.  # in A.U.
@@ -127,7 +127,7 @@ Transit :
 
 External:  # external stellar component: any additional stellar variability imposed by the user using an external TEXT file
   Enable: 0
-  FilePath: PSLS_DIR/examples/external_example.txt # path to a TEXT file containing a time-series of relative flux variation (in ppm)
+  FilePath: '' # path to a TEXT file containing a time-series of relative flux variation (in ppm)
             # the first column shall be the time in second and the second one the relative flux variation in ppm.
             # The time-series shall cover the simulation duration
             # The flux is assumed to be normalized to one:   S(t) = 1. + dS * 1e-6
