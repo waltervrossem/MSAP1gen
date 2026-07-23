@@ -30,6 +30,8 @@ def get_parser():
                              "a seed from hash of config, otherwise use the value passed.")
     parser.add_argument('--setup-only', action='store_const', const=True, default=False,
                         help="Only generate configuration files.")
+    parser.add_argument('--run-only', action='store_const', const=True, default=False,
+                        help="Run psls on already generated config files.")
     return parser
 
 
@@ -41,7 +43,8 @@ def run(args):
     psls_args = args.psls_args
     seed = args.seed
 
-    cg.setup(dirname, configname, gs_path, seed, fname)
+    if not args.run_only:
+        cg.setup(dirname, configname, gs_path, seed, fname)
 
     if not args.setup_only:
         cmd = f'python {PSLS_DIR}/psls.py {psls_args} {fname}'
@@ -53,7 +56,7 @@ def run(args):
             if args.format:
                 psls_config = read_yaml(args.fname)
                 # Filename part from psls.py
-                StarName = "%10.10i" % psls_config['Star']['ID']
+                StarName = "%10.10i" % int(psls_config['Star']['ID'])
                 input_file = f'{StarName}.hdf5'
                 output_file = f'ref{StarName}.hdf5'
                 format_MSAP1_in(input_file, output_file)
