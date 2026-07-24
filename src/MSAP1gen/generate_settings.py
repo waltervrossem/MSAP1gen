@@ -254,7 +254,9 @@ def gen_spots(activity, prot, nquarters):
         if activity == 'diffrot':
             latitudes = rng.choice([minLatitudes, maxLatitudes], size=nspot)
         else:
-            latitudes = rng.uniform(minLatitudes, maxLatitudes, nspot)
+            # Draw from a cos distribution
+            latitudes = rng.uniform(np.sin(np.radians(minLatitudes)), np.sin(np.radians(maxLatitudes)), nspot)
+            latitudes = np.degrees(np.asin(latitudes))
         longitudes = rng.uniform(0.0, 360.0, nspot)
         contrasts = rng.normal(meanContrast, stdContrast, nspot)
 
@@ -268,12 +270,12 @@ def gen_spots(activity, prot, nquarters):
         config['Lifetime'] = lifetimes
         config['TimeMax'] = maxTimes
         config['Contrast'] = contrasts
-        config = check_spots(config, prot)
+        config = check_spots(config, prot, minLatitudes, maxLatitudes, activity)
 
     return config
 
 
-def check_spots(config, prot):
+def check_spots(config, prot, minLatitudes, maxLatitudes, activity):
     # Check for and resolve overlapping spots as psls can't handle them
     Spot = config.copy()
     Spot['dOmega'] = 0
@@ -321,7 +323,9 @@ def check_spots(config, prot):
             config['Longitude'][s1] = new_lon
             inispots[s1].psi0 = np.radians(new_lon)
             if (counter[s1] % 5) == 0:
-                config['Latitude'][s1] = rng.uniform(0, 60)
+                latitudes = rng.uniform(np.sin(np.radians(minLatitudes)), np.sin(np.radians(maxLatitudes)))
+                latitudes = np.degrees(np.asin(latitudes))
+                config['Latitude'][s1] = latitudes
                 inispots[s1].chi = np.radians(config['Latitude'][s1])
             Omspot = 2.0 * np.pi * (
                         1.0 - inispots[s1].Domega * np.sin(inispots[s1].chi) * np.sin(inispots[s1].chi)) / prot
