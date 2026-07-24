@@ -308,6 +308,14 @@ def check_spots(config, prot, minLatitudes, maxLatitudes, activity):
             ispot = psls.spotintime.OneSpot(t, defoo[1], Domega=defoo[3], rsp=defoo[4 + i], latsp=defoo[4 + nspots + i],
                                             lonsp=defoo[4 + 2 * nspots + i], t0=defoo[4 + 3 * nspots + i],
                                             lifetime=defoo[4 + 4 * nspots + i], fs=defoo[4 + 5 * nspots + i])
+            if activity == 'diffrot':
+                pass
+            else:  # Save memory and time by only keeping start and end times
+                mask = ispot.duree >= 1e-9
+                idx = [0, *np.where(mask)[0][[0,-1]]]
+                ispot.t = ispot.t[idx]
+                ispot.psi = ispot.psi[idx]
+                ispot.duree = ispot.duree[idx]
             inispots.append(ispot)
     else:
         return config
@@ -329,7 +337,7 @@ def check_spots(config, prot, minLatitudes, maxLatitudes, activity):
                 inispots[s1].chi = np.radians(config['Latitude'][s1])
             Omspot = 2.0 * np.pi * (
                         1.0 - inispots[s1].Domega * np.sin(inispots[s1].chi) * np.sin(inispots[s1].chi)) / prot
-            inispots[s1].psi = inispots[s1].psi0 + (t - inispots[s1].t0) * Omspot
+            inispots[s1].psi = inispots[s1].psi0 + (inispots[s1].t - inispots[s1].t0) * Omspot
 
         have_overlap_new = []
         for s1, _ in have_overlap:
@@ -355,7 +363,7 @@ def check_spots(config, prot, minLatitudes, maxLatitudes, activity):
 
 def get_spot_config(spot_options, prot):
     config = {}
-    if spot_options == 0:
+    if spot_options == 0 or spot_options is None:
         config['Enable'] = 0
     else:
         config['Enable'] = 1
