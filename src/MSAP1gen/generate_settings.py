@@ -240,15 +240,15 @@ def gen_spots(activity, prot, nquarters, rng):
             meanRadius = 2.5
             stdRadius = 0.5
             nspotPerRot = 4
-            meanLifetime = 2.0
-            stdLifetime = 0.5
+            meanLogLifetime = 1.8
+            stdLifetime = 0.2
             minLatitudes = 0.0
             maxLatitudes = 60.0
         else:
             meanRadius = 1.5
             stdRadius = 0.5
             nspotPerRot = 1
-            meanLifetime = 1.0
+            meanLogLifetime = 1.0
             stdLifetime = 0.5
             minLatitudes = 0.0
             maxLatitudes = 30.0
@@ -261,7 +261,8 @@ def gen_spots(activity, prot, nquarters, rng):
         nspot = int(nspotFloat)
         maxTimes = durationLC / (nspot - 1) * np.arange(nspot)
         radii = rng.normal(meanRadius, stdRadius, nspot)
-        lifetimes = prot * rng.normal(meanLifetime, stdLifetime, nspot)
+        lifetimes = np.exp(rng.normal(meanLogLifetime, stdLifetime, nspot))  # https://arxiv.org/pdf/2110.13284
+        lifetimes = np.maximum(lifetimes, 0.01)
         if activity == 'diffrot':
             latitudes = rng.choice([minLatitudes, maxLatitudes], size=nspot)
         else:
@@ -271,9 +272,8 @@ def gen_spots(activity, prot, nquarters, rng):
         longitudes = rng.uniform(0.0, 360.0, nspot)
         contrasts = rng.normal(meanContrast, stdContrast, nspot)
 
-        # Only positive radii and lifetimes
+        # Only positive radii
         radii[radii <= 0] = meanRadius
-        lifetimes[lifetimes <= 0] = prot * meanLifetime
 
         config['Radius'] = radii
         config['Latitude'] = latitudes
