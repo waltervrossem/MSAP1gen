@@ -45,5 +45,6 @@ grid.controls['photo_interval'] = 50
 grid.controls['max_timestep_factor'] = 5
 
 if __name__ == "__main__":
-    grid.create_grid(grid_name)
-    os.system(f'cp {__file__} {grid_name}/')
+    if not os.path.exists(grid_name):
+        grid.create_grid(grid_name)
+        os.system(f'cp {__file__} {grid_name}/')
