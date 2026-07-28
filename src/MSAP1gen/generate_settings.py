@@ -149,11 +149,17 @@ def get_transit_config(p, transit_type):
         radius = []
         period = []
         phase_deg = []
+        TTV_period = []
+        TTV_amplitude = []
+        TTV_phase = []
         for i in range(num):
-            transit = get_transit_config(p,  ['single_shallow', 'single_shallow', 'single_deep'][i])
-            radius.append(transit['PlanetRadius'])
-            period.append(transit['OrbitalPeriod'])
-            phase_deg.append(transit['OrbitalAngle'])
+            transit = get_transit_config(p,  ['single_shallow', 'single_shallow', 'single_deep'][i], rng)
+            radius.append(transit['PlanetRadius'][0])
+            period.append(transit['OrbitalPeriod'][0])
+            phase_deg.append(transit['OrbitalAngle'][0])
+            TTV_period.append(transit['TTV_Period'][0])
+            TTV_amplitude.append(transit['TTV_Amplitude'][0])
+            TTV_phase.append(transit['TTV_Phase'][0])
         period = np.array(period)
 
     elif transit_type == 'ttv':
