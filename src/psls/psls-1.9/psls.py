@@ -519,7 +519,7 @@ def prepare_spot_parameters(Star,Spot,Duration,seed=None,verbose=False):
     params[7 + 6 * nspots] = modulation
     return params
 
-def generate_spot_LC(params,Sampling,Duration,TimeShift):
+def generate_spot_LC(params,Sampling,Duration,TimeShift, skip_overlap_check=False):
     # cadence = Instrument['Sampling']  # cadence in seconds
 
     # the spot Lightcurve (LC) is modelled at a cadence shorter than the rotation period but in general at a longer than the working cadence
@@ -538,7 +538,7 @@ def generate_spot_LC(params,Sampling,Duration,TimeShift):
     nspots = int(params[0])
 
     # computes long cadence   light curve and returns in flx
-    [flx_lc, inispots, ovl] = spotintime.paramtolc(params, t_lc, nspots)
+    [flx_lc, inispots, ovl] = spotintime.paramtolc(params, t_lc, nspots, skip_overlap_check=skip_overlap_check)
 
     if ovl == 1:
         raise sls.SLSError("spot-Light curve not created because overlapping spots, please reconsider the spot parameters")
@@ -575,13 +575,14 @@ def usage():
     print("--psd : save the PSD associated with the averaged light-curve (averaged over all cameras) and the merged light-curve (with the option -m)")
     print('--hdf5 : save in a HDF5 file the mean light-curve (LC)  and the various simulation components and data')
     print('--proto-sas : the data are saved in a HDF5 file and in format compatible with the prototype SAS pipeline')
+    print('--skip-spot-overlap: Skip spot overlap check.')
 
 if __name__ == "__main__":
     if(len(sys.argv)<2):
         usage()
         sys.exit(2)
     try:
-        opts,args = getopt.getopt(sys.argv[1:],"hvPVo:fmM:",["pdf","extended-plots","psd","hdf5","proto-sas"])
+        opts,args = getopt.getopt(sys.argv[1:],"hvPVo:fmM:",["pdf","extended-plots","psd","hdf5","proto-sas", "skip-spot-overlap"])
 
     except getopt.GetoptError as err:
         print (str(err))
@@ -600,7 +601,7 @@ if __name__ == "__main__":
     SavePSD = False
     SaveHDF5 = False
     ProtoSAS = False # data saved in a format compatible with the prototype SAS pipeline
-
+    skip_overlap_check = False
     for o, a in opts:
         if o == "-h" :
             usage()
@@ -634,6 +635,8 @@ if __name__ == "__main__":
             SaveHDF5 = True
             ProtoSAS = True
             MergedOutput = True
+        elif o == "--skip-spot-overlap":
+            skip_overlap_check = True
         else:
             print ("unhandled option %s" % (o))
             sys.exit(1)
@@ -1021,7 +1024,7 @@ if __name__ == "__main__":
                 _, ts_activity, _, _ = sls.mpsd2rts(f * 1e-6, mps_nf_activity * 1e6, seed=seed_i,time_shift=group_idx * TimeShift)
                 delta_ts_i += ts_activity*1e-6
             if(SpotEnable):
-                spot_component = generate_spot_LC(spot,Sampling,Duration,group_idx*TimeShift)
+                spot_component = generate_spot_LC(spot,Sampling,Duration,group_idx*TimeShift, skip_overlap_check)
                 if (SaveHDF5):
                     spot_ts[:,i,1] = spot_component
             if (TransitEnable):
