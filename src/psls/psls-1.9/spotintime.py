@@ -91,37 +91,33 @@ class OneSpot:
         # Following Eq.8 in Dorren 1987
         beta = np.arccos(np.cos(i) * np.sin(chi) + np.sin(i) * np.cos(chi) * np.cos(psi))
         # Test for the visibility of the spot
-        for idx, bet in enumerate(beta, start=0):
-            if modul > 0.0:
-                alpha = alpha_max * (1.0 + 0.3 * np.sin(2.0 * np.pi * self.t[idx] / modul))
-            else:
-                alpha = alpha_max
-            if bet + alpha <= np.pi / 2.0:
-                # the spot is completely in view
-                delta = 0.0
-                zeta = 0.0
-            else:
-                # the spot is partially in view
-                # following Eq7 in Dorren 1987
-                delta = np.arccos(1. / (np.tan(alpha) * np.tan(bet)))
-                zeta = np.arctan2(np.sin(delta) * np.sin(alpha), np.cos(alpha) / np.sin(bet))
+        delta = np.zeros(N)
+        zeta = np.zeros(N)
+        T = np.zeros(N)
+        if modul > 0.0:
+            alpha = alpha_max * (1.0 + 0.3 * np.sin(2.0 * np.pi * self.t / modul))
+        else:
+            alpha = np.full(N, alpha_max)
+        spot_completely_in_view = beta + alpha <= np.pi/2
+        mask = ~spot_completely_in_view
 
-            if bet <= np.pi / 2.0:
-                T = np.arctan(np.sin(zeta) * np.tan(bet))
-            else:
-                T = np.pi - np.arctan(-np.sin(zeta) * (np.tan(bet)))
+        # mask=True : the spot is partially in view following Eq7 in Dorren 1987
+        delta[mask] = np.arccos(1. / (np.tan(alpha[mask]) * np.tan(beta[mask])))
+        zeta[mask] = np.arctan2(np.sin(delta[mask]) * np.sin(alpha[mask]), np.cos(alpha[mask]) / np.sin(beta[mask]))
 
-            if bet - alpha >= np.pi / 2.0:
-                # the spot is completely out of view
-                AB[idx, :] = np.zeros(2)
-            else:
-                AB[idx, 0] = zeta + (np.pi - delta) * np.cos(bet) * (np.sin(alpha) ** 2.0) \
-                             - (np.sin(zeta) * np.sin(bet) * np.cos(alpha))
-                AB[idx, 1] = (-1.0 / 3.0) * (np.pi - delta) * \
-                             (2.0 * pow(np.cos(alpha), 3)
-                              + (3.0 * pow(np.sin(bet), 2) * np.cos(alpha) * pow(np.sin(alpha), 2))) \
-                             + (2.0 / 3.0) * (np.pi - T) \
-                             + (1.0 / 6.0) * (np.sin(zeta) * np.sin(2.0 * bet) * (2.0 - 3.0 * pow(np.cos(alpha), 2)))
+        mask = beta <= np.pi / 2.0
+        nmask = ~mask
+        T[mask] = np.arctan(np.sin(zeta[mask]) * np.tan(beta[mask]))
+        T[nmask] = np.pi - np.arctan(-np.sin(zeta[nmask]) * (np.tan(beta[nmask])))
+
+        mask = beta - alpha < np.pi / 2.0
+        AB[mask, 0] = zeta[mask] + (np.pi - delta[mask]) * np.cos(beta[mask]) * (np.sin(alpha[mask]) ** 2.0) - (
+                    np.sin(zeta[mask]) * np.sin(beta[mask]) * np.cos(alpha[mask]))
+        AB[mask, 1] = (-1.0 / 3.0) * (np.pi - delta[mask]) * (2.0 * np.pow(np.cos(alpha[mask]), 3) + (
+                    3.0 * np.pow(np.sin(beta[mask]), 2) * np.cos(alpha[mask]) * np.pow(np.sin(alpha[mask]), 2))) + (
+                                  2.0 / 3.0) * (np.pi - T[mask]) + (1.0 / 6.0) * (
+                                  np.sin(zeta[mask]) * np.sin(2.0 * beta[mask]) * (
+                                      2.0 - 3.0 * np.pow(np.cos(alpha[mask]), 2)))
 
         return AB
 
@@ -176,7 +172,7 @@ def testoverlap(tach1, tach2):
 
     return S < a1 + a2
 
-def paramtolc(defoo, t, nspots, verbose=False):
+def paramtolc(defoo, t, nspots, verbose=False, skip_overlap_check=False):
 
     inispots = [OneSpot(t, defoo[1], Domega=defoo[3], rsp=defoo[4], latsp=defoo[4 + nspots],
                     lonsp=defoo[4 + 2 * nspots], t0=defoo[4 + 3 * nspots], lifetime=defoo[4 + 4 * nspots], fs=defoo[4 + 5 * nspots])]
@@ -187,16 +183,19 @@ def paramtolc(defoo, t, nspots, verbose=False):
                        lifetime=defoo[4 + 4 * nspots + i], fs=defoo[4 + 5 * nspots + i])
             inispots.append(ispot)
 
-    for i1, i2 in itt.combinations(range(nspots), 2):
-        s1 = inispots[i1]
-        s2 = inispots[i2]
-        if np.any(testoverlap(s1, s2)):
-            print(f"Overlapping spots {i1} {i2}, aborting")
-            ovl = 1
-            return 0, inispots, ovl
+    if not skip_overlap_check:
+        for i1, i2 in itt.combinations(range(nspots), 2):
+            s1 = inispots[i1]
+            s2 = inispots[i2]
+            if np.any(testoverlap(s1, s2)):
+                print(f"Overlapping spots {i1} {i2}, aborting")
+                ovl = 1
+                return 0, inispots, ovl
     else:
-        if(verbose):
-            print("No Overlapping spots") # executed if the loop ended normally (no break)
-        ovl = 0
-        flx = 1.0 - np.sum(dimlist(inispots, incl=defoo[2], mue=defoo[5 + 6 * nspots], mus=defoo[6 + 6 * nspots], modul=defoo[7 + 6 * nspots]), axis=0) - defoo[4 + 6 * nspots]
-        return flx, inispots, ovl
+        if verbose:
+            print("Skipping spot overlap check")
+    if(verbose):
+        print("No Overlapping spots") # executed if the loop ended normally (no break)
+    ovl = 0
+    flx = 1.0 - np.sum(dimlist(inispots, incl=defoo[2], mue=defoo[5 + 6 * nspots], mus=defoo[6 + 6 * nspots], modul=defoo[7 + 6 * nspots]), axis=0) - defoo[4 + 6 * nspots]
+    return flx, inispots, ovl
