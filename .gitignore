@@ -219,3 +219,6 @@ __marimo__/
 
 # Pycharm
 .idea
+
+configs/
+input/
