@@ -19,7 +19,6 @@ import common
 sys.path.append(f'{os.path.dirname(__file__)}/../psls/psls-1.9')
 import psls
 
-rng = np.random.default_rng(42)
 
 out_dir = f'{os.path.dirname(__file__)}/../../configs'
 
