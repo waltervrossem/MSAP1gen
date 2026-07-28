@@ -1,5 +1,6 @@
 #! /usr/bin/bash
 set -e
+echo "Running gyre"
 date "+DATE: %Y-%m-%d%nTIME: %H:%M:%S"
 if grep -wq "9.1.1" "$GYRE_DIR/src/common/version_m.fypp"; then
   true

@@ -1,10 +1,11 @@
 #! /usr/bin/bash
 set -e
 
-date "+Running MESA: %Y-%m-%d%nTIME: %H:%M:%S"
+echo "Running MESA"
+date "+DATE: %Y-%m-%d%nTIME: %H:%M:%S"
 # Run with MESA 24081
-# shellcheck disable=SC2046
-if [ $(cat "$MESA_DIR/data/version_number") != r24.08.1 ]; then
+MESA_version=$(cat "$MESA_DIR/data/version_number")
+if [ "$MESA_version" != "r24.08.1" ]; then
   echo "Must run with MESA 24.08.1"
   exit 1
 fi
