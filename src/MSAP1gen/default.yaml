@@ -36,7 +36,7 @@ Instrument:
   Systematics:
     Enable : 1
 # The binary file containing the systematics parameters:
-    Table : PSLS_DIR/systematics/PLATO_systematics_BOL_V2.npy  # representative for the sample P5 stars, with mask updates during the quarter
+    Table : ../../../src/psls/psls-1.9/systematics/PLATO_systematics_BOL_V2.npy  # representative for the sample P5 stars, with mask updates during the quarter
 #    Table :  PSLS_DIR/systematics/PLATO_systematics_BOL_FixedMask_V2.npy # representative for the sample P5 stars, with fixed mask during the quarter
 #    Table :  PSLS_DIR/systematics/PLATO_systematics_BOL_P1_V2.npy # representative for the sample P1 stars
     Version: 2  # Version of the table
