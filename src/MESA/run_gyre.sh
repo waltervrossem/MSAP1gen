@@ -16,8 +16,7 @@ version_greater_equal(){
 
 VERSION="$(gyre-driver --version)"
 VERSION=${VERSION/"gyre-driver "/""}  # Only keep version number
-
-if [[ $(version_greater_equal "0.5.0" "$VERSION" ) ]]; then
+if version_greater_equal "$VERSION" "0.5.0"; then
   true
 else
   echo "Need gyre-driver 0.5.0 or above, update wsssss to at least 0.7.8 from PyPI."
