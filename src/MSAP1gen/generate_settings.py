@@ -344,14 +344,13 @@ def check_spots(config, prot, minLatitudes, maxLatitudes, activity, rng):
                         1.0 - inispots[s1].Domega * np.sin(inispots[s1].chi) * np.sin(inispots[s1].chi)) / prot
             inispots[s1].psi = inispots[s1].psi0 + (inispots[s1].t - inispots[s1].t0) * Omspot
 
-        have_overlap_new = []
-        for s1, _ in have_overlap:
+        have_overlap_new = list()
+        for s1 in sorted(list(set([_[0] for _ in have_overlap]))):
             for s2 in range(nspots):
-                if s1 == s2:
-                    continue
-                if psls.spotintime.testoverlap(inispots[s1], inispots[s2]):
-                    have_overlap_new.append((s1, s2))
-                    counter[s1] += 1
+                if s1 != s2:
+                    if psls.spotintime.testoverlap(inispots[s1], inispots[s2]):
+                        have_overlap_new.append((s1, s2))
+                        counter[s1] += 1
         if counter[s1] >= 100:  # Can't find suitable spot location so will remove it
             inispots[s1].alpha = 0
             config['Radius'][s1] = 0
