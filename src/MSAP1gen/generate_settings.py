@@ -22,7 +22,7 @@ import psls
 
 out_dir = f'{os.path.dirname(__file__)}/../../configs'
 
-Gmags = [7, 9, 11, 13]
+Vmags = [8.5, 10, 13]  # psls can't handle Vmag brighter than ~8.5 for all Teff
 rel_rotations = [0.85, 1, 1.15]
 inclinations = [15, 30, 60, 90]
 num_spots = ['active']
