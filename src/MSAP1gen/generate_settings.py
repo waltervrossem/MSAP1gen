@@ -424,16 +424,19 @@ def generate_gyre_configs():
 def worker(values):
     i, p, Vmag, rel_rotation, inclination, spot_options, transit_type = values
     star_id = int(j * 1e8) + i
+    out_file_path = f'{out_dir}/{kind[j]}/{star_id:08}.yaml'
+
     rng = np.random.default_rng(star_id)
 
     rot_period = calc_rotation(p, rel_rotation)
     transit_config = get_transit_config(p, transit_type, rng)
     spot_config = get_spot_config(spot_options, rot_period, rng)
 
-    make_psls_config(f'{out_dir}/{kind[j]}/{star_id:08}.yaml', star_id, p, Vmag, rot_period, inclination, spot_config,
+    make_psls_config(out_file_path, star_id, p, Vmag, rot_period, inclination, spot_config,
                      transit_config)
 
 
+skip_existing = True
 if __name__ == "__main__":
     nworker = mp.cpu_count()
     os.environ['OMP_NUM_THREADS'] = '1'
@@ -447,7 +450,15 @@ if __name__ == "__main__":
         else:
             num = None
 
-        args = [[i, *a] for i, a in enumerate(iters)]
+        args = []
+        existing = sorted(os.listdir(f'{out_dir}/{kind[j]}'))
+        for i, a in enumerate(iters):
+            star_id = int(j * 1e8) + i
+            out_file = f'{star_id:08}.yaml'
+            if skip_existing:
+                if out_file in existing:
+                    continue
+            args.append([i, *a])
         with mp.Pool(nworker) as pool, tqdm.tqdm(total=len(args)) as pbar:
             for res in pool.imap_unordered(worker, args):
                 pbar.update(1)
