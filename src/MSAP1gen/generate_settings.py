@@ -385,7 +385,7 @@ def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_confi
     config['Star']['Inclination'] = inclination
     pnum = profile.fname.split('.')[0].replace('profile', '')
     hnum = profile.LOGS.split('/')[-2]
-    config['Star']['ModelName'] = f'{hnum}_{pnum}_{rot_period:.1f}.modes'
+    config['Star']['ModelName'] = f'{hnum}_{pnum}_{rot_period:04.1f}.modes'
 
     config['Activity']['Spot'] = spot_config
     config['Transit'] = transit_config
@@ -411,7 +411,7 @@ def generate_gyre_configs():
         hnum = profile.LOGS.split('/')[-2]
         for i, rel_rot in enumerate(rel_rotations):
             rot_period = calc_rotation(profile, rel_rot)
-            fname = f'{hnum}_{pnum}_{rot_period:.1f}.in'
+            fname = f'{hnum}_{pnum}_{rot_period:04.1f}.in'
             rot_freq = 1/rot_period
             new_omega_rot_str = f'omega_rot = {rot_freq:g}'.replace('e-', 'd-').replace('e+', 'd+')
             gyre_in = default_gyre_in.replace('omega_rot = 0d0', new_omega_rot_str)
