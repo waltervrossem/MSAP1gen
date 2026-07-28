@@ -25,8 +25,8 @@ out_dir = f'{os.path.dirname(__file__)}/../../configs'
 Gmags = [7, 9, 11, 13]
 rel_rotations = [0.85, 1, 1.15]
 inclinations = [15, 30, 60, 90]
-num_spots = [0, 'active']
-transits = ['single_deep', 'single_shallow', 'triple', 'ttv']
+num_spots = ['active']
+transits = ['', 'single_deep', 'single_shallow', 'triple', 'ttv']
 
 
 hists = [ld.History(f'../MESA/grid/{i:04}/LOGS/history.data') for i in range(11)]
