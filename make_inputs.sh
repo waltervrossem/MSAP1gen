@@ -11,11 +11,11 @@ curdir=$(pwd)
 cd $curdir/src/MESA
 ./run_mesa.sh
 cd $curdir/src/MSAP1gen
-./generate_settings.py
+python generate_settings.py
 cd $curdir/src/MESA
 ./run_gyre.sh
 cd $curdir/src/MSAP1gen
-./make_all_config.py
+python make_all_config.py
 
 cd $curdir
 echo "Making tar.gz"
