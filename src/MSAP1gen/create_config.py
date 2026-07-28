@@ -281,14 +281,17 @@ def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
         if not os.path.exists(gs_path):
             raise FileNotFoundError(f'GyreSummary file not found: {gs_path}')
 
+    freq_file_path = f"../../freqs/{config['Star']['ModelName']}"
     os.makedirs(dirname, exist_ok=False)
+    os.makedirs(f'{dirname}/../../freqs', exist_ok=True)
     try:
         if gs_path is not None:
-            M, R, L, Teff, nu_max, Delta_nu = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{config['Star']['ModelName']}")
+            M, R, L, Teff, nu_max, Delta_nu = convert_gyre(config['Star']['Inclination'], gs_path, out_path=f"{dirname}/{freq_file_path}")
             config['Star']['Logg'] = float(np.log10(M/R**2) + LOGG_SUN)
             config['Star']['Teff'] = float(Teff)
             config['Oscillations']['numax'] = nu_max
             config['Oscillations']['deltanu'] = Delta_nu
+            config['Star']['ModelName'] = freq_file_path
     except ValueError:
         shutil.rmtree(dirname, ignore_errors=True)
         raise

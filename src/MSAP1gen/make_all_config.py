@@ -16,7 +16,7 @@ def worker(config_name):
     i = config_name.split('.')[0]
     config_path = os.path.join(input_dir, config_name)
     try:
-        cg.setup(f'../../input/{i}', config_path, None, 0, 'psls.yaml')
+        cg.setup(f'{output_dir}/{i}', config_path, None, 0, 'psls.yaml')
     except Exception as e:
         print(i, e)
         raise
