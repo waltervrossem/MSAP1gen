@@ -131,7 +131,13 @@ def get_transit_config(p, transit_type, rng):
     TTV_period = 0.0
     TTV_amplitude = 0.0
     TTV_phase = 0.0
-    if transit_type == 'single_deep':
+    if transit_type.lower() in ('', 'none', None):
+        num = 0
+        radius = 0
+        period = 0
+        phase_deg = 0
+
+    elif transit_type == 'single_deep':
         num = 1
         radius = rng.uniform(1, 2.5)
         period = rng.uniform(1, 20)
