@@ -127,7 +127,7 @@ def calc_rotation(p, rel_rotation):
     return rot
 
 
-def get_transit_config(p, transit_type):
+def get_transit_config(p, transit_type, rng):
     mass = p.header['star_mass']
     TTV_period = 0.0
     TTV_amplitude = 0.0
@@ -215,7 +215,7 @@ def get_transit_config(p, transit_type):
             'TTV_Amplitude': TTV_amplitude,
             'TTV_Phase': TTV_phase}
 
-def gen_spots(activity, prot, nquarters):
+def gen_spots(activity, prot, nquarters, rng):
     """
     Generate random spots, statistics depend on the selected 'activity' level
     From gen_yaml_spots.py by Jordan Philidet
@@ -276,12 +276,12 @@ def gen_spots(activity, prot, nquarters):
         config['Lifetime'] = lifetimes
         config['TimeMax'] = maxTimes
         config['Contrast'] = contrasts
-        config = check_spots(config, prot, minLatitudes, maxLatitudes, activity)
+        config = check_spots(config, prot, minLatitudes, maxLatitudes, activity, rng)
 
     return config
 
 
-def check_spots(config, prot, minLatitudes, maxLatitudes, activity):
+def check_spots(config, prot, minLatitudes, maxLatitudes, activity, rng):
     # Check for and resolve overlapping spots as psls can't handle them
     Spot = config.copy()
     Spot['dOmega'] = 0
@@ -367,13 +367,13 @@ def check_spots(config, prot, minLatitudes, maxLatitudes, activity):
     return config
 
 
-def get_spot_config(spot_options, prot):
+def get_spot_config(spot_options, prot, rng):
     config = {}
     if spot_options == 0 or spot_options is None:
         config['Enable'] = 0
     else:
         config['Enable'] = 1
-        config.update(gen_spots(spot_options, prot, 8))
+        config.update(gen_spots(spot_options, prot, 8, rng))
     return config
 
 
@@ -424,9 +424,11 @@ def generate_gyre_configs():
 def worker(values):
     i, p, Vmag, rel_rotation, inclination, spot_options, transit_type = values
     star_id = int(j * 1e8) + i
+    rng = np.random.default_rng(star_id)
+
     rot_period = calc_rotation(p, rel_rotation)
-    spot_config = get_spot_config(spot_options, rot_period)
-    transit_config = get_transit_config(p, transit_type)
+    transit_config = get_transit_config(p, transit_type, rng)
+    spot_config = get_spot_config(spot_options, rot_period, rng)
 
     make_psls_config(f'{out_dir}/{kind[j]}/{star_id:08}.yaml', star_id, p, Vmag, rot_period, inclination, spot_config,
                      transit_config)
