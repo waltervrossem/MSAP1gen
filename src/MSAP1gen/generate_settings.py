@@ -24,10 +24,15 @@ out_dir = f'{os.path.dirname(__file__)}/../../configs'
 
 Vmags = [8.5, 10, 13]  # psls can't handle Vmag brighter than ~8.5 for all Teff
 rel_rotations = [0.85, 1, 1.15]
+single_rot = [1]
 inclinations = [15, 30, 60, 90]
 num_spots = ['active']
-transits = ['', 'single_deep', 'single_shallow', 'triple', 'ttv']
-
+transits = ['single_deep', 'single_shallow', 'triple', 'ttv']
+no_transits = ['']
+gaps = ['low', 'high']
+no_gaps = [None]
+camera_groups = [1, 2, 3, 4]
+all_groups = [4]
 
 hists = [ld.History(f'../MESA/grid/{i:04}/LOGS/history.data') for i in range(11)]
 profs = []
@@ -35,9 +40,23 @@ for h in hists:
     profs.extend(ld.load_profs(h))
 c_mesa = uf.get_constants(hists[0])
 
-iters_general = itertools.product(profs, Vmags, rel_rotations, inclinations, num_spots, transits)
-num_general = np.prod(list(map(len, [profs, Vmags, rel_rotations, inclinations, num_spots, transits])))
-iters_special_case = []
+def make_iter(*args):
+    lengths = list(map(len, args))
+    num = np.prod(lengths)
+    return itertools.product(*args), num
+
+iters_baseline, num_baseline = make_iter(profs, Vmags, rel_rotations, inclinations, num_spots, no_transits, no_gaps, all_groups)
+iters_planets, num_planets = make_iter(profs, Vmags, single_rot, [90], num_spots, transits, no_gaps, all_groups)
+iters_gapscams, num_gapscams = make_iter(profs, Vmags, single_rot, [90], num_spots, transits, gaps, camera_groups)
+
+iters_special = []
+num_special = 0
+
+iters_all = {'baseline': (iters_baseline, num_baseline),
+             'planets': (iters_planets, num_planets),
+             'gapscams': (iters_gapscams, num_gapscams),
+             'special': (iters_special, num_special)}
+
 def mass_to_radius(mass):
     # https://www.aanda.org/articles/aa/full_html/2024/06/aa48690-23/aa48690-23.html
     if mass < 4.37:
@@ -381,11 +400,39 @@ def get_spot_config(spot_options, prot, rng):
     return config
 
 
-def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_config, transit_config):
+def get_gap_config(gap_options, rng):
+    config = {}
+    # https://platomission.com/wp-content/uploads/2018/05/plato2-rb.pdf
+    if gap_options is None or gap_options == '' or gap_options.lower() == 'none':
+        config['Enable'] = 0
+    elif gap_options == 'low':
+        config['Enable'] = 1
+        config['RandomGapDuration'] = 10  # Minutes
+        config['RandomGapTimeFraction'] = 0.5  # Percent
+
+        config['PeriodicGapDuration'] = 10  # Minutes
+        config['PeriodicGapCadence'] = 0.5  # Days
+    elif gap_options == 'high':
+        config['Enable'] = 1
+        config['RandomGapDuration'] = 10
+        config['RandomGapTimeFraction'] = 2.5
+
+        config['PeriodicGapDuration'] = 10
+        config['PeriodicGapCadence'] = 0.3
+    else:
+        raise NotImplementedError(f'Gap option {gap_options} not implemented.')
+    return config
+
+
+def get_cam_config(num_cam_group, rng):
+    return np.sort(rng.choice([1,2,3,4], num_cam_group, replace=False))
+
+
+def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_config, transit_config, gap_config, cam_groups):
     config = {'Observation': {},
               'Star': {},
-              'Activity': {}}
-    config['Star']['ID'] = f'{i:08}'
+              'Activity': {},
+              'Instrument': {}}
     config['Star']['ID'] = f'{i:09}'
     config['Star']['Mag'] = Vmag
     config['Star']['SurfaceRotationPeriod'] = rot_period
@@ -396,7 +443,8 @@ def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_confi
 
     config['Activity']['Spot'] = spot_config
     config['Transit'] = transit_config
-
+    config['Instrument']['GroupID'] = cam_groups
+    config['Observation']['Gaps'] = gap_config
     # Generate hash
     # config['Observation']['MasterSeed'] = hash(f'{i}{Vmag}{rot_period}{inclination}') % 2**32
     config['Observation']['MasterSeed'] = hash(f'{pnum}{hnum}') % 2 ** 32
@@ -447,17 +495,14 @@ if __name__ == "__main__":
     nworker = mp.cpu_count()
     os.environ['OMP_NUM_THREADS'] = '1'
     generate_gyre_configs()
-    kind = ['general', 'special']
-    for j, iters in enumerate([iters_general]):#, iters_special_case]):
-        print(f'Making {kind[j]} configs.')
-        os.makedirs(f'{out_dir}/{kind[j]}', exist_ok=True)
-        if kind == 'general':
-            num = num_general
-        else:
-            num = None
+    for j, (kind, (iters, num)) in enumerate(iters_all.items()):#, iters_special_case]):
+        if num == 0:
+            continue
+        print(f'Making {kind} configs.')
+        os.makedirs(f'{out_dir}/{kind}', exist_ok=True)
 
         args = []
-        existing = sorted(os.listdir(f'{out_dir}/{kind[j]}'))
+        existing = sorted(os.listdir(f'{out_dir}/{kind}'))
         for i, a in enumerate(iters):
             star_id = int(j * 1e8) + i
             out_file = f'{star_id:09}.yaml'
