@@ -32,5 +32,7 @@ similarly, we pass `--skip-spot-overlap` to `psls.py` as these checks have alrea
 when creating the config files. To see the rest of the available options run
 `./src/MSAP1gen/run.py -h` and `./src/psls/psls-1.9/psls.py -h`.
 
-Input files starting with 0 are general cases, i.e. they explore the parameter space defined in `generate_settings.py`.
-Inputs starting with 1 are special cases investigating a specific thing.
+- Input files starting with 0 are baseline cases, they have no gaps or planets.
+- Those starting with 1 have different planet combinations.
+- Those starting with 2 have different gaps and camera group combinations.
+- Those starting with 3 are special cases.
