@@ -6,13 +6,12 @@ import tqdm
 import multiprocessing as mp
 
 from run import *
+from generate_settings import iters_all
 
 base_input_dir = '../../configs/'
 base_output_dir = '../../input'
 
 def worker(config_name):
-    if config_name.startswith('1'):
-        raise ValueError(f'Special case in general config file directory: {config_name}')
     i = config_name.split('.')[0]
     config_path = os.path.join(input_dir, config_name)
     try:
@@ -26,13 +25,14 @@ if __name__ == "__main__":
     os.environ['OMP_NUM_THREADS'] = '1'
 
     skip_existing = True
-    for kind in ['general']:#, 'special']:
+    for (kind, (iters, num)) in iters_all.items():
         print(f'Making {kind} inputs.')
         output_dir = os.path.join(base_output_dir, kind)
         input_dir = os.path.join(base_input_dir, kind)
         if not skip_existing:
             shutil.rmtree(output_dir, ignore_errors=True)
-
+        if num == 0:
+            continue
         os.makedirs(output_dir, exist_ok=True)
 
         config_files = sorted(os.listdir(input_dir))
