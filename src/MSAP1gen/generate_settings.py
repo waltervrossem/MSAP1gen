@@ -481,13 +481,16 @@ def worker(values):
 
     out_file_path = f'{out_dir}/{list(iters_all.keys())[j]}/{star_id:09}.yaml'
     rng = np.random.default_rng(star_id)
+    rng = [np.random.default_rng(_) for _ in rng.integers(0, 2 ** 32 - 1, 4)]
 
     rot_period = calc_rotation(p, rel_rotation)
-    transit_config = get_transit_config(p, transit_type, rng)
-    spot_config = get_spot_config(spot_options, rot_period, rng)
+    transit_config = get_transit_config(p, transit_type, rng[0])
+    spot_config = get_spot_config(spot_options, rot_period, rng[1])
+    gap_config = get_gap_config(gap_options, rng[2])
+    camera_groups = get_cam_config(num_cam_group, rng[3])
 
     make_psls_config(out_file_path, star_id, p, Vmag, rot_period, inclination, spot_config,
-                     transit_config)
+                     transit_config, gap_config, camera_groups)
 
 
 skip_existing = True
