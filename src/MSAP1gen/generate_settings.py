@@ -475,10 +475,7 @@ def generate_gyre_configs():
 
 
 def worker(values):
-    i, p, Vmag, rel_rotation, inclination, spot_options, transit_type = values
-    star_id = int(j * 1e8) + i
-    out_file_path = f'{out_dir}/{kind[j]}/{star_id:08}.yaml'
-
+    star_id, p, Vmag, rel_rotation, inclination, spot_options, transit_type, gap_options, num_cam_group = values
     out_file_path = f'{out_dir}/{list(iters_all.keys())[j]}/{star_id:09}.yaml'
     rng = np.random.default_rng(star_id)
     rng = [np.random.default_rng(_) for _ in rng.integers(0, 2 ** 32 - 1, 4)]
@@ -512,7 +509,7 @@ if __name__ == "__main__":
             if skip_existing:
                 if out_file in existing:
                     continue
-            args.append([i, *a])
+            args.append([star_id, *a])
         with mp.Pool(nworker) as pool, tqdm.tqdm(total=len(args)) as pbar:
             for res in pool.imap_unordered(worker, args):
                 pbar.update(1)
