@@ -172,13 +172,34 @@ def AddFlare(time,FlareMeanPeriod,FlareUpDown,FlareAmplitude,FlareMeanDuration,F
     tmax = time[-1]
 
     FlareNumbers = int((tmax - tmin) / FlareMeanPeriodSec)
-    np.random.seed(seed)
-    t_flares = np.random.uniform(low=tmin, high=tmax, size=FlareNumbers)
-    amp_flares = np.random.normal(loc=FlareAmplitude, scale=FlareAmplitude / 10, size=FlareNumbers)
-    amp_flares *= 1e-6 # ppm -> normalized unit
-    duration_flares = np.random.normal(loc=FlareMeanDurationSec, scale=FlareDurationDispersionSec, size=FlareNumbers)
+    rng = np.random.default_rng(seed)
+    t_flares = rng.uniform(low=tmin, high=tmax, size=FlareNumbers)
+    # amp_flares = rng.normal(loc=FlareAmplitude, scale=FlareAmplitude / 10, size=FlareNumbers)
+    # amp_flares *= 1e-6 # ppm -> normalized unit
+    # duration_flares = rng.normal(loc=FlareMeanDurationSec, scale=FlareDurationDispersionSec, size=FlareNumbers)
+
+    #Powerlaw
+    x_min = FlareAmplitude[0]
+    x_max = FlareAmplitude[1]
+    alpha = 2
+    beta = 1 - alpha
+    a = x_min**beta
+    b = x_max**beta - a
+    x = rng.uniform(0, 1, size=FlareNumbers)
+    amp_flares = 1e-6 * (a + b * x) ** (1/beta)  # Power law
+    # https://www.aanda.org/articles/aa/full_html/2025/02/aa52489-24/aa52489-24.html
+    t_half = 60*np.exp(rng.normal(loc=FlareMeanDuration, scale=FlareDurationDispersion, size=FlareNumbers))  # exp is Flux rise time from 0 to max in min
+    duration_flares = t_half / FlareUpDown * np.sqrt(1e6*amp_flares)  # Scale duration with sqrt amplutide
+
     LC = np.ones(time.size)
-    return flares.add_flares(LC,time,t_flares,amp_flares,duration_flares,FlareUpDown)
+
+    incl = Star['Inclination']
+    prot = Star['SurfaceRotationPeriod']
+
+    # Flare should be visible at peak time
+    lon = (rng.uniform(-90, 90, FlareNumbers) + np.degrees(t_flares * (2*np.pi/(prot*86400))) % 360) % 360
+    lat = rng.uniform(-90, 90, FlareNumbers)
+    return flares.add_flares(LC,time,t_flares,amp_flares,duration_flares,FlareUpDown, prot, incl, lat, lon)
 
 def platotemplate(duration,dt=1.,V=11.,n=24,residual_only=False,cl=None):
     '''
