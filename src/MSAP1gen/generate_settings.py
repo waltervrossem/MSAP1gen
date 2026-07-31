@@ -54,8 +54,7 @@ num_special = 0
 
 iters_all = {'baseline': (iters_baseline, num_baseline),
              'planets': (iters_planets, num_planets),
-             'gapscams': (iters_gapscams, num_gapscams),
-             'special': (iters_special, num_special)}
+             'gapscams': (iters_gapscams, num_gapscams)}
 
 def mass_to_radius(mass):
     # https://www.aanda.org/articles/aa/full_html/2024/06/aa48690-23/aa48690-23.html

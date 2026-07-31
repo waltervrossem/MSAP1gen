@@ -1405,6 +1405,8 @@ if __name__ == "__main__":
                 dset12 = hdf5file.create_dataset('OSCILLATIONS_LC', data=osc_ts[:,:,1:].squeeze(axis=2))
             if(GranulationEnable):
                 dset13 = hdf5file.create_dataset('GRANULATION_LC', data=granulation_ts[:,:,1:].squeeze(axis=2))
+            if ExternalEnable:
+                hdf5file.create_dataset('EXTERNAL_LC', data=np.interp(stellar_ts[:,:,0], ExternalData[:, 0] - ExternalData[0, 0], ExternalData[:, 1]))
             dset14 = hdf5file.create_dataset('TIME', data=stellar_ts[:,:,0])
             if(MergedOutput and not ProtoSAS):
                 dset15 = hdf5file.create_dataset('TIME_MERGED', data=merged_ts[:,0])
