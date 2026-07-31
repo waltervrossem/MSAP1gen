@@ -433,7 +433,7 @@ def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_confi
               'Star': {},
               'Activity': {},
               'Instrument': {}}
-    config['Star']['ID'] = f'{i:09}'
+    config['Star']['ID'] = i  # Can't have zero-padded integers as they are interpreted as octal when loaded.
     config['Star']['Mag'] = Vmag
     config['Star']['SurfaceRotationPeriod'] = rot_period
     config['Star']['Inclination'] = inclination
@@ -476,7 +476,7 @@ def generate_gyre_configs():
 
 def worker(values):
     star_id, p, Vmag, rel_rotation, inclination, spot_options, transit_type, gap_options, num_cam_group = values
-    out_file_path = f'{out_dir}/{list(iters_all.keys())[j]}/{star_id:09}.yaml'
+    out_file_path = f'{out_dir}/{list(iters_all.keys())[j]}/{star_id:010}.yaml'
     rng = np.random.default_rng(star_id)
     rng = [np.random.default_rng(_) for _ in rng.integers(0, 2 ** 32 - 1, 4)]
     # If each star (mass, age) should have the same seed uncomment this
@@ -509,7 +509,7 @@ if __name__ == "__main__":
         existing = sorted(os.listdir(f'{out_dir}/{kind}'))
         for i, a in enumerate(iters):
             star_id = int(j * 1e8) + i
-            out_file = f'{star_id:09}.yaml'
+            out_file = f'{star_id:010}.yaml'
             if skip_existing:
                 if out_file in existing:
                     continue

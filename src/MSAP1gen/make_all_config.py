@@ -39,8 +39,7 @@ if __name__ == "__main__":
         existing = sorted(os.listdir(output_dir))
 
         if skip_existing:
-            config_files = [c for c in config_files if c[:9] not in existing]
-
+            config_files = [c for c in config_files if c[:10] not in existing]
         with mp.Pool(nworker) as pool, tqdm.tqdm(total=len(config_files)) as pbar:
             for res in pool.imap_unordered(worker, config_files):
                 pbar.update(1)
