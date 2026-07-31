@@ -216,6 +216,11 @@ def get_transit_config(p, transit_type, rng):
 
         TTV_period = period_out / abs(j*Delta)
         TTV_phase = rng.uniform(0, 360)
+    elif transit_type == 'binary':
+        num = 1
+        radius = rng.uniform(5, 8)
+        period = rng.uniform(1, 20)
+        phase_deg = rng.uniform(0, 360)
     else:
         raise Exception(f'Unknown transit type: {transit_type}')
 
@@ -508,7 +513,7 @@ if __name__ == "__main__":
         args = []
         existing = sorted(os.listdir(f'{out_dir}/{kind}'))
         for i, a in enumerate(iters):
-            star_id = int(j * 1e8) + i
+            star_id = int(j * 1e9) + i
             out_file = f'{star_id:010}.yaml'
             if skip_existing:
                 if out_file in existing:
