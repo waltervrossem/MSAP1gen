@@ -7,6 +7,7 @@ import multiprocessing as mp
 
 from run import *
 from generate_settings import iters_all
+import create_special_cases
 
 base_input_dir = '../../configs/'
 base_output_dir = '../../input'
@@ -43,3 +44,4 @@ if __name__ == "__main__":
         with mp.Pool(nworker) as pool, tqdm.tqdm(total=len(config_files)) as pbar:
             for res in pool.imap_unordered(worker, config_files):
                 pbar.update(1)
+    create_special_cases.make_special(9)
