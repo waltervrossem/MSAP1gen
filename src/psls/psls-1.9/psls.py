@@ -1037,8 +1037,7 @@ if __name__ == "__main__":
         if(OscEnable): osc_ts = np.zeros((nt,NGroup,2))
         if(FlareEnable): flares_ts = np.zeros((nt,NGroup))
 
-
-
+    rng_spike = np.random.default_rng(MasterSeed)
     for iMC in range(nMC):
         for i in range(NGroup):
             if(Verbose):
@@ -1114,7 +1113,10 @@ if __name__ == "__main__":
                     stellar_ts[:,i,1] *= external_component
                 if(FlareEnable):
                     stellar_ts[:,i,1] *= ts_flare
-
+            if Instrument['RandomSpikes']['Enable'] == 1:
+                num_spikes = int(Instrument['RandomSpikes']['MeanNumPerDay'] * Duration)
+                i_RandomSpikes = rng_spike.integers(0, nt, size=num_spikes)
+                f_RandomSpikes = 1e-6*10**rng_spike.uniform(*Instrument['RandomSpikes']['LogFactor'], size=num_spikes) * rng_spike.choice([-1, 1], size=num_spikes, replace=True)
             for j in range(NCamera):
                 if(SystematicsEnable): full_ts_SC[:,i,j,0] = time_i
                 full_ts[:,i,j,0] = time_i
@@ -1154,6 +1156,8 @@ if __name__ == "__main__":
                         # adding random noise from LC variance
                         random_component = np.random.normal(0.,1.,size=nt)*np.sqrt(rawLCvar)
                     if(Verbose): print(f'      noise level: {np.std(random_component)*1e6/np.sqrt(3600./Sampling):.2f} ppm.hr^(1/2)')
+                    if Instrument['RandomSpikes']['Enable'] == 1:
+                        random_component[i_RandomSpikes] += f_RandomSpikes
                     delta_ts_i_j += random_component
 
                 ts *= (1. + delta_ts_i_j)

@@ -33,6 +33,10 @@ Instrument:
 # 'PLATO_SCALING': the NSR value is obtained by interpolating, at the given magnitude, the NSR scaling relation expected for PLATO
 # 'PLATO_SIMU': the NSR is taken from realistic simulated ligth-curves (stored in the systematics error table, see below) and vary with the mask shapes and thus then the latter are updated
     NSR :  -1. # User-specified Noise to Signal Ratio [ppm in one hour] for a single camera. This value takes into account all random noises but does not include systematic errors.
+  RandomSpikes:  # Add single high/low flux points to CameraGroup LC
+    Enable: 0
+    LogFactor: [3, 5]  # log ppm, limits of uniform distribution spikes are drawn from
+    MeanNumPerDay: 0.1
   Systematics:
     Enable : 1
 # The binary file containing the systematics parameters:
