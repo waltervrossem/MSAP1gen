@@ -25,6 +25,18 @@ def temp_chdir(dirname):
         os.chdir(initial_cwd)
 
 
+def convert_type(value):
+    if isinstance(value, np.ndarray):
+        value = value.tolist()
+    elif isinstance(value, np.float64):
+        value = float(value)
+    elif isinstance(value, np.int64):
+        value = int(value)
+    elif isinstance(value, list) or isinstance(value, tuple):
+        value = [convert_type(item) for item in value]
+    return value
+
+
 def make_yaml_str(config, indent=0):
     out = ''
     for key, value in config.items():
@@ -33,11 +45,7 @@ def make_yaml_str(config, indent=0):
         if isinstance(value, dict):
             out += make_yaml_str(value, indent)
         else:
-            if isinstance(value, np.ndarray):
-                value = value.tolist()
-            elif isinstance(value, np.float64):
-                value = float(value)
-
+            value = convert_type(value)
             out += f"{' '*indent} {value}\n"
         indent -= 4
     return out
