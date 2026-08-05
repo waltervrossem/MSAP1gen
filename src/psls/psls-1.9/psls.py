@@ -160,7 +160,7 @@ def LS(t,s,dt):
     return nu,psd
 
 
-def AddFlare(time,FlareMeanPeriod,FlareUpDown,FlareAmplitude,FlareMeanDuration,FlareDurationDispersion,seed):
+def AddFlare(time,FlareMeanPeriod,FlareUpDown,FlareAmplitude,FlareMeanDuration,FlareDurationDispersion,seed, Star):
 
     FlareMeanPeriodSec = FlareMeanPeriod*86400. # days -> sec
     if(FlareMeanDuration<=0):
@@ -168,17 +168,22 @@ def AddFlare(time,FlareMeanPeriod,FlareUpDown,FlareAmplitude,FlareMeanDuration,F
     if(FlareDurationDispersion):
         FlareDurationDispersionSec = FlareMeanPeriodSec/20.
 
+    rng = np.random.default_rng(seed)
+
     tmin = time[0]
     tmax = time[-1]
 
     FlareNumbers = int((tmax - tmin) / FlareMeanPeriodSec)
-    rng = np.random.default_rng(seed)
+    FlareNumbersLong = int(rng.uniform(1, 8) * (tmax - tmin) / (90*86400))  # ~ 6 Flares per quarter https://iopscience.iop.org/article/10.3847/1538-4365/aa8f9a/pdf
+
     t_flares = rng.uniform(low=tmin, high=tmax, size=FlareNumbers)
     # amp_flares = rng.normal(loc=FlareAmplitude, scale=FlareAmplitude / 10, size=FlareNumbers)
     # amp_flares *= 1e-6 # ppm -> normalized unit
     # duration_flares = rng.normal(loc=FlareMeanDurationSec, scale=FlareDurationDispersionSec, size=FlareNumbers)
 
     #Powerlaw
+    # Short duration flares
+    # https://www.aanda.org/articles/aa/full_html/2025/02/aa52489-24/aa52489-24.html
     x_min = FlareAmplitude[0]
     x_max = FlareAmplitude[1]
     alpha = 2
@@ -187,19 +192,32 @@ def AddFlare(time,FlareMeanPeriod,FlareUpDown,FlareAmplitude,FlareMeanDuration,F
     b = x_max**beta - a
     x = rng.uniform(0, 1, size=FlareNumbers)
     amp_flares = 1e-6 * (a + b * x) ** (1/beta)  # Power law
-    # https://www.aanda.org/articles/aa/full_html/2025/02/aa52489-24/aa52489-24.html
     t_half = 60*np.exp(rng.normal(loc=FlareMeanDuration, scale=FlareDurationDispersion, size=FlareNumbers))  # exp is Flux rise time from 0 to max in min
-    duration_flares = t_half / FlareUpDown * np.sqrt(1e6*amp_flares)  # Scale duration with sqrt amplutide
+    duration_flares = t_half
+
+    # Long duration flares
+    # https://iopscience.iop.org/article/10.3847/1538-4365/aa8f9a/pdf
+    t_flares_long = rng.uniform(low=tmin, high=tmax, size=FlareNumbersLong)
+    x = rng.uniform(1e-3, 1, size=FlareNumbersLong)
+    m = 0.3 * np.log(10)
+    B = 10
+    amp_flares_long = 1 + np.log(1 - x * (1 - np.exp(-m*B)))/-m  # Percent, atleast 1 %
+    amp_flares_long = amp_flares_long/100  # Relative
+    duration_flares_long = 60*np.exp(rng.normal(loc=4, scale=0.5, size=FlareNumbersLong))
 
     LC = np.ones(time.size)
-
     incl = Star['Inclination']
     prot = Star['SurfaceRotationPeriod']
 
+    t_flares = np.concatenate((t_flares,t_flares_long))
+    amp_flares = np.concatenate((amp_flares, amp_flares_long))
+    duration_flares = np.concatenate((duration_flares, duration_flares_long))
     # Flare should be visible at peak time
-    lon = (rng.uniform(-90, 90, FlareNumbers) + np.degrees(t_flares * (2*np.pi/(prot*86400))) % 360) % 360
-    lat = rng.uniform(-90, 90, FlareNumbers)
-    return flares.add_flares(LC,time,t_flares,amp_flares,duration_flares,FlareUpDown, prot, incl, lat, lon)
+    lon = (rng.uniform(-90, 90, FlareNumbers + FlareNumbersLong) + np.degrees(t_flares * (2*np.pi/(prot*86400))) % 360) % 360
+    latitudes = rng.uniform(np.sin(np.radians(-60)), np.sin(np.radians(60)), size=FlareNumbers + FlareNumbersLong)
+    latitudes = np.degrees(np.asin(latitudes))
+
+    return flares.add_flares(LC,time,t_flares,amp_flares,duration_flares,FlareUpDown, prot, incl, latitudes, lon)
 
 def platotemplate(duration,dt=1.,V=11.,n=24,residual_only=False,cl=None):
     '''
@@ -1006,7 +1024,7 @@ if __name__ == "__main__":
     dnu = nu[1]
     time += IntegrationTime/2.
     if(FlareEnable):
-        FlareLC = AddFlare(time,FlareMeanPeriod,FlareUpDown,FlareAmplitude,FlareMeanDuration,FlareDurationDispersion,seeds[5])
+        FlareLC = AddFlare(time,FlareMeanPeriod,FlareUpDown,FlareAmplitude,FlareMeanDuration,FlareDurationDispersion,seeds[5], Star)
 
     if(SystematicsEnable): full_ts_SC = np.zeros((nt,NGroup,NCamera,2)) # systematic error only
     if(SaveHDF5):
