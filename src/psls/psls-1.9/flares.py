@@ -17,8 +17,13 @@ import spotintime
 
 def flare(t0, amp0, dur0, up_down, t_LC_):
     LCflare = np.zeros(len(t_LC_))
-    LCflare[t_LC_ <= t0] = amp0 * np.exp(-((t_LC_[t_LC_ <= t0] - t0) / (dur0 * up_down)) ** 2)
-    LCflare[t_LC_ > t0] = amp0 * np.exp(-(t_LC_[t_LC_ > t0] - t0) / dur0)
+    mask = t_LC_ <= t0
+    LCflare[mask] = amp0 * np.exp(-((t_LC_[mask] - t0) / (dur0 * up_down)) ** 2)
+    mask = t_LC_ > t0
+    t_LC_exp = t_LC_[mask] - t0
+    # (1 - t_LC_exp / dur0) part to ensure LC = 0 at t = t0 + 10 * dur0
+    # in the exponent use 1.2dur0 instead of dur0 so the shape remains ~same to counteract 1-x part.
+    LCflare[mask] = amp0 * np.exp(-t_LC_exp / (1.2*dur0)) * (1 - t_LC_exp / (10*dur0))
 
     return LCflare
 
@@ -27,14 +32,15 @@ def add_flares(LC, t_LC, t_flares, amp_flares, duration_flares, up_down, prot=0,
     if prot == 0:
         for t0, amp0, dur0 in zip(t_flares, amp_flares, duration_flares):
             tmin = max([0, t0 - 3 * up_down * dur0])
-            tmax = min([max(t_LC), t0 + 5 * dur0])
-            t_LC_ = t_LC[(t_LC > tmin) & (t_LC < tmax)]
-            LC[(t_LC > tmin) & (t_LC < tmax)] = LC[(t_LC > tmin) & (t_LC < tmax)] + flare(t0, amp0, dur0, up_down, t_LC_)
+            tmax = min([max(t_LC), t0 + 10 * dur0])
+            mask = (t_LC > tmin) & (t_LC < tmax)
+            t_LC_ = t_LC[mask]
+            LC[mask] = LC[mask] + flare(t0, amp0, dur0, up_down, t_LC_)
     else:
         t_LC_days = t_LC / 86400
         for t0, amp0, dur0, lat0, lon0 in zip(t_flares, amp_flares, duration_flares, lat, lon):
             tmin = max([0, t0 - 3 * up_down * dur0])
-            tmax = min([max(t_LC), t0 + 5 * dur0])
+            tmax = min([max(t_LC), t0 + 10 * dur0])
             mask = (t_LC > tmin) & (t_LC < tmax)
             t_LC_ = t_LC[mask]
             t_LC_days_ = t_LC_days[mask]
@@ -47,6 +53,6 @@ def add_flares(LC, t_LC, t_flares, amp_flares, duration_flares, up_down, prot=0,
 
             flare_LC0 = flare(t0, amp0, dur0, up_down, t_LC_)
             flare_LC = spot_profile * flare_LC0
-            LC[(t_LC > tmin) & (t_LC < tmax)] = LC[(t_LC > tmin) & (t_LC < tmax)] + flare_LC
+            LC[mask] = LC[mask] + flare_LC
 
     return LC
