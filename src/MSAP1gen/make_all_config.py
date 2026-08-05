@@ -44,4 +44,5 @@ if __name__ == "__main__":
         with mp.Pool(nworker) as pool, tqdm.tqdm(total=len(config_files)) as pbar:
             for res in pool.imap_unordered(worker, config_files):
                 pbar.update(1)
+    shutil.rmtree(os.path.join(base_output_dir, 'special'), ignore_errors=True)
     create_special_cases.make_special(9)
