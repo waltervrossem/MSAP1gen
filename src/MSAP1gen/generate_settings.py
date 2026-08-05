@@ -31,7 +31,7 @@ transits = ['single_deep', 'single_shallow', 'triple', 'ttv']
 no_transits = ['']
 gaps = ['low', 'high']
 no_gaps = [None]
-camera_groups = [1, 2, 3, 4]
+camera_groups = [0]  # Choose randomly 1-4 camera groups
 all_groups = [4]
 
 hists = [ld.History(f'../MESA/grid/{i:04}/LOGS/history.data') for i in range(11)]
@@ -429,6 +429,8 @@ def get_gap_config(gap_options, rng):
 
 
 def get_cam_config(num_cam_group, rng):
+    if num_cam_group == 0:
+        num_cam_group = rng.integers(1, 4)
     return np.sort(rng.choice([1,2,3,4], num_cam_group, replace=False))
 
 
