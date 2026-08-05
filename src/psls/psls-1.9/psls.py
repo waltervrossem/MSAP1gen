@@ -177,9 +177,6 @@ def AddFlare(time,FlareMeanPeriod,FlareUpDown,FlareAmplitude,FlareMeanDuration,F
     FlareNumbersLong = int(rng.uniform(1, 8) * (tmax - tmin) / (90*86400))  # ~ 6 Flares per quarter https://iopscience.iop.org/article/10.3847/1538-4365/aa8f9a/pdf
 
     t_flares = rng.uniform(low=tmin, high=tmax, size=FlareNumbers)
-    # amp_flares = rng.normal(loc=FlareAmplitude, scale=FlareAmplitude / 10, size=FlareNumbers)
-    # amp_flares *= 1e-6 # ppm -> normalized unit
-    # duration_flares = rng.normal(loc=FlareMeanDurationSec, scale=FlareDurationDispersionSec, size=FlareNumbers)
 
     #Powerlaw
     # Short duration flares

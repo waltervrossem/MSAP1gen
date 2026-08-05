@@ -49,7 +49,6 @@ iters_baseline, num_baseline = make_iter(profs, Vmags, rel_rotations, inclinatio
 iters_planets, num_planets = make_iter(profs, Vmags, single_rot, [90], num_spots, transits, no_gaps, all_groups)
 iters_gapscams, num_gapscams = make_iter(profs, Vmags, single_rot, [90], num_spots, transits, gaps, camera_groups)
 
-iters_special = []
 num_special = 0
 
 iters_all = {'baseline': (iters_baseline, num_baseline),

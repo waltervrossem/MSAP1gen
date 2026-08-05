@@ -123,10 +123,13 @@ Granulation :
 # Planetary Transit (Mandel & Agol (2002)'s algorithm)
 Transit : 
   Enable: 0
-  PlanetRadius : 0.5   # in jupiter radii
-  OrbitalPeriod : 10.  # in days
-  PlanetSemiMajorAxis : 1.  # in A.U.
-  OrbitalAngle : 0. # in deg
+  PlanetRadius : [0.5]   # in jupiter radii
+  OrbitalPeriod : [10.]  # in days
+  PlanetSemiMajorAxis : [1.]  # in A.U.
+  OrbitalAngle : [0.] # in deg
+  TTV_Period: [0.]  # days
+  TTV_Amplitude: [0.]  # days
+  TTV_Phase: [0.]  # degrees
   LimbDarkeningCoefficients: [0.25,0.75] # 2 or 4 coefficients can be used. 2 for a quadratic law and 4 for a non-linear law
 
 External:  # external stellar component: any additional stellar variability imposed by the user using an external TEXT file
