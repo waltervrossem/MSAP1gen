@@ -54,7 +54,7 @@ def format_MSAP1_in(input_file, output_file):
                 T = f['TRANSIT_LC']
             else:
                 T = 1
-            CAMGROUP_LC = ((np.ones(f['TIME'].shape) + (O + G + A) * s) * np.mean(1 + (RSE + R) * s, axis=2) * S * F * T * E - 1)  # Within 1e-10 of PSLS output
+            CAMGROUP_LC = ((np.ones(f['TIME'].shape) + (O + G + A) * s) * np.mean(1 + (RSE + R) * s, axis=2) * S * F * T * E - 1)/s  # Within 1e-10 of PSLS output
             o.create_dataset('TIME', data=f['TIME'])
             o.create_dataset('FLUX', data=1+CAMGROUP_LC*s)
             if 'TRANSIT_LC' in f.keys():
