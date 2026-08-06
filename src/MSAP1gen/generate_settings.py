@@ -482,12 +482,11 @@ def generate_gyre_configs():
 def worker(values):
     star_id, p, Vmag, rel_rotation, inclination, spot_options, transit_type, gap_options, num_cam_group = values
     out_file_path = f'{out_dir}/{list(iters_all.keys())[j]}/{star_id:010}.yaml'
-    rng = np.random.default_rng(star_id)
+    # rng = np.random.default_rng(star_id)
+    pnum = p.fname.split('.')[0].replace('profile', '')
+    hnum = p.LOGS.split('/')[-2]
+    rng = np.random.default_rng((hash(f'{pnum}{hnum}') + hash(np.pi*rel_rotation)) % 2 ** 32)
     rng = [np.random.default_rng(_) for _ in rng.integers(0, 2 ** 32 - 1, 4)]
-    # If each star (mass, age) should have the same seed uncomment this
-    # pnum = p.fname.split('.')[0].replace('profile', '')
-    # hnum = p.LOGS.split('/')[-2]
-    # rng = np.random.default_rng(hash(f'{pnum}{hnum}') % 2 ** 32)
 
     rot_period = calc_rotation(p, rel_rotation)
     transit_config = get_transit_config(p, transit_type, rng[0])
