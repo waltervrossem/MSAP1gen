@@ -8,7 +8,7 @@ To create the lightcurves, run `psls.py` in `src/psls/psls-1.9/psls.py` and not 
 https://sites.lesia.obspm.fr/psls/ as the version in this repository has various changes and additions
 which are needed to create these lightcurves.
 
-To install, first clone this repository and then run the following:
+To install, first install git large file storage `git-lfs` and then clone this repository and then run the following:
 ```
 cd MSAP1gen
 python -m venv .venv
@@ -22,10 +22,11 @@ Once everything is installed, simply run
 ```
 to run MESA, gyre, and the scripts which generate the input directories.
 
-To create the lightcurves, run as follows: 
+To create a lightcurve, run as follows: 
 ```
 confignum=00000000
-./src/MSAP1gen/run.py -d ./input/general/$confignum -c ./input/general/$confignum/psls.yaml --psls-args '\-V --hdf5 --skip-spot-overlap' --run-only
+kind=baseline  # one of baseline, planets, gapscams, special
+./src/MSAP1gen/run.py -d ./input/$kind/$confignum -c ./input/$kind/$confignum/psls.yaml --psls-args '\-V --hdf5 --skip-spot-overlap' --run-only
 ```
 As the input directories have already been created we run with `--run-only`, 
 similarly, we pass `--skip-spot-overlap` to `psls.py` as these checks have already been performed
@@ -35,4 +36,4 @@ when creating the config files. To see the rest of the available options run
 - Input files starting with 0 are baseline cases, they have no gaps or planets.
 - Those starting with 1 have different planet combinations.
 - Those starting with 2 have different gaps and camera group combinations.
-- Those starting with 3 are special cases.
+- Those starting with 9 are special cases.
