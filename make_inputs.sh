@@ -8,8 +8,12 @@ curdir=$(pwd)
 #rm -rf src/MESA/gyre_in src/MESA/grid/*/rot
 #rm -rf src/MESA/grid
 
-cd $curdir/src/MESA
-./run_mesa.sh
+if [ ! -d "$curdir/src/MESA/grid" ]; then
+  cd "$curdir/src/MESA"
+  tar -xzf "$curdir/data/grid.tar.gz"
+  cd "$curdir"
+fi
+
 cd $curdir/src/MSAP1gen
 python generate_settings.py
 cd $curdir/src/MESA
