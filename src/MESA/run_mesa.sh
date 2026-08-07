@@ -10,14 +10,20 @@ if [ "$MESA_version" != "r24.08.1" ]; then
   exit 1
 fi
 
-python base_grid.py
-cd grid/0000
-./mk &> /dev/null
-mv star ../
-cd ..
+profiles=(grid/*/LOGS/profile*.data)
 
-export OMP_NUM_THREADS=$(($(nproc --all) / 4))
-mesa-go . --cmd-pre-each "cp ../star ./" -n 4 --skip-if-file-exists WORK_DIR/LOGS/profile9.data.GYRE
+if [[ ${#profiles[@]} -eq 99 ]]; then
+  echo Found correct number of profiles.
+else
+  python base_grid.py
+  cd grid/0000
+  ./mk &> /dev/null
+  mv star ../
+  cd ..
+
+  export OMP_NUM_THREADS=$(($(nproc --all) / 4))
+  mesa-go . --cmd-pre-each "cp ../star ./" -n 4 --skip-if-file-exists WORK_DIR/LOGS/profile9.data.GYRE
+fi
 
 # Clean up
 rm -f */star
