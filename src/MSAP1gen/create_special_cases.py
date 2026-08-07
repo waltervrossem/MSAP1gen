@@ -12,8 +12,8 @@ from wsssss.constants import post15140 as c_mesa
 
 from pytransit import RRModel
 
-import create_config as cg
-import common
+from MSAP1gen import create_config as cg
+from MSAP1gen import common
 
 sys.path.append(f'{os.path.dirname(__file__)}/../psls/psls-1.9')
 import psls

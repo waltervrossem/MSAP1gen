@@ -14,7 +14,7 @@ from platoconstants import cgs
 from platoconstants import cs
 
 from MSAP1gen import common
-from common import PSLS_DIR, read_yaml
+from MSAP1gen.common import PSLS_DIR, read_yaml
 
 astero_TEFF_SUN = 5777
 LOGG_SUN = math.log10(cgs.SOLAR_MASS_PARAMETER) - 2.*math.log10(cgs.SOLAR_RADIUS)

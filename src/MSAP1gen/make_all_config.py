@@ -5,9 +5,9 @@ import shutil
 import tqdm
 import multiprocessing as mp
 
-from run import *
-from generate_settings import iters_all
-import create_special_cases
+from MSAP1gen.run import *
+from MSAP1gen.generate_settings import iters_all
+from MSAP1gen import create_special_cases
 
 base_input_dir = '../../configs/'
 base_output_dir = '../../input'

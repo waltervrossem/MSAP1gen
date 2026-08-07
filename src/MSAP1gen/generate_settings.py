@@ -14,7 +14,7 @@ from platoconstants import cgs
 from platoconstants import cs
 from scipy import interpolate as ip
 
-import common
+from MSAP1gen import common
 
 sys.path.append(f'{os.path.dirname(__file__)}/../psls/psls-1.9')
 import psls
