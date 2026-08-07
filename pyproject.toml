@@ -42,3 +42,6 @@ license-files = ["LICEN[CS]E*"]
 [project.urls]
 Homepage = "https://github.com/waltervrossem/MSAP1gen"
 Issues = "https://github.com/waltervrossem/MSAP1gen/issues"
+
+[project.scripts]
+MSAP1gen = "MSAP1gen.run:run"
