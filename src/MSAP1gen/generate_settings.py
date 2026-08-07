@@ -34,11 +34,11 @@ no_gaps = [None]
 camera_groups = [0]  # Choose randomly 1-4 camera groups
 all_groups = [4]
 
-hists = [ld.History(f'../MESA/grid/{i:04}/LOGS/history.data') for i in range(11)]
 profs = []
-for h in hists:
-    profs.extend(ld.load_profs(h))
-c_mesa = uf.get_constants(hists[0])
+for hnum in range(11):
+    for pnum in range(9):
+        profs.append(ld.Profile(f'../MESA/grid/{hnum:04}/LOGS/profile{pnum+1}.data', index_name=None))
+c_mesa = uf.get_constants(profs[0])
 
 def make_iter(*args):
     lengths = list(map(len, args))
