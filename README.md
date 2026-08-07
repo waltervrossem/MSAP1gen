@@ -1,7 +1,8 @@
 # MSAP1
 
 This repository contains the code required to generate synthetic lightcurves to test MSAP1.
-To generate from scratch, MESA 24.08.1 and gyre 9.1.1 are required then run `make_inputs.sh`.
+To generate from scratch, first install MESA 24.08.1 and gyre 9.1.1 are and then run `run_mesa.sh`. 
+Then, to create the inputs run `make_inputs.sh`.
 
 To create the lightcurves, run `psls.py` in `src/psls/psls-1.9/psls.py` and not the one from 
 https://sites.lesia.obspm.fr/psls/ as the version in this repository has various changes and additions
@@ -23,7 +24,7 @@ to generate the input directories.
 
 To create a lightcurve, run as follows: 
 ```
-confignum=00000000
+confignum=0000000000  # 10 digits, starting with 0, 1, 2, or 9.
 kind=baseline  # one of baseline, planets, gapscams, special
 MSAP1gen -d ./input/$kind/$confignum -c ./input/$kind/$confignum/psls.yaml --psls-args '\--hdf5 --skip-spot-overlap' --run-only --format
 ```

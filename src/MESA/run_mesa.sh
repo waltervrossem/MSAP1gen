@@ -31,6 +31,6 @@ else
 fi
 
 # Clean up
-rm -f */star
+rm -f ./*/star
 rm -f ./star
-rm -rf */.mesa_temp_cache
+rm -rf ./*/.mesa_temp_cache
