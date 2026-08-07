@@ -30,7 +30,7 @@ MSAP1gen -d ./input/$kind/$confignum -c ./input/$kind/$confignum/psls.yaml --psl
 As the input directories have already been created we run with `--run-only`, 
 similarly, we pass `--skip-spot-overlap` to `psls.py` as these checks have already been performed
 when creating the config files. To see the rest of the available options run
-`./src/MSAP1gen/run.py -h` and `./src/psls/psls-1.9/psls.py -h`.
+`MSAP1gen -h` and `./src/psls/psls-1.9/psls.py -h`.
 
 - Input files starting with 0 are baseline cases, they have no gaps or planets.
 - Those starting with 1 have different planet combinations.
