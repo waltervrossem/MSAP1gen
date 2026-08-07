@@ -110,7 +110,7 @@ Activity :
     MeanPeriod: 2 # mean period btw  2 flares (days)
     Amplitude: [100, 100000]  # mean flares amplitudes (ppm) ; the flares amplitudes are drawn from Normal distribution centred at FlareAmplitude and with a dispersion of FlareAmplitude / 10
     UpDown:  0.25 # Ratio of the time taken for the flow to rise to the time taken for the flow to fall
-    MeanDuration: 0.83 # Mean log flare duration in log minutes
+    MeanDuration: 0.83 # Mean natural log flare duration in log minutes
     DurationDispersion: 0.21 # dispersion in the log flare duration. If negative,  DurationDispersion = MeanPeriod/20
     Seed: -1 # Seed of the pseudo-random number generator used to generate the flares. Negative value if controlled by MasterSeed
 

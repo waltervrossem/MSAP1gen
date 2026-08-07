@@ -47,13 +47,13 @@ def make_iter(*args):
 
 iters_baseline, num_baseline = make_iter(profs, Vmags, rel_rotations, inclinations, num_spots, no_transits, no_gaps, all_groups)
 iters_planets, num_planets = make_iter(profs, Vmags, single_rot, [90], num_spots, transits, no_gaps, all_groups)
-iters_gapscams, num_gapscams = make_iter(profs, Vmags, single_rot, [90], num_spots, transits, gaps, camera_groups)
-
-num_special = 0
+iters_gapscams, num_gapscams = make_iter(profs, Vmags, rel_rotations, inclinations, num_spots, ['', 'triple'], gaps, camera_groups)
 
 iters_all = {'baseline': (iters_baseline, num_baseline),
              'planets': (iters_planets, num_planets),
-             'gapscams': (iters_gapscams, num_gapscams)}
+             'gapscams': (iters_gapscams, num_gapscams)
+             }
+
 
 def mass_to_radius(mass):
     # https://www.aanda.org/articles/aa/full_html/2024/06/aa48690-23/aa48690-23.html
