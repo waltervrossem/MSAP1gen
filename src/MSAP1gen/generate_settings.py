@@ -186,7 +186,7 @@ def get_transit_config(p, transit_type, rng):
             TTV_period.append(transit['TTV_Period'][0])
             TTV_amplitude.append(transit['TTV_Amplitude'][0])
             TTV_phase.append(transit['TTV_Phase'][0])
-            b_factor.append(transit['ImpactParameterFactor'])
+            b_factor.append(transit['ImpactParameterFactor'][0])
         period = np.array(period)
 
     elif transit_type == 'ttv':
