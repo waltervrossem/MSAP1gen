@@ -153,18 +153,21 @@ def get_transit_config(p, transit_type, rng):
         radius = 0
         period = 0
         phase_deg = 0
+        b_factor = 0
 
     elif transit_type == 'single_deep':
         num = 1
         radius = rng.uniform(1, 2.5)
         period = rng.uniform(1, 20)
         phase_deg = rng.uniform(0, 360)
+        b_factor = rng.uniform(0, 1)
 
     elif transit_type == 'single_shallow':
         num = 1
         radius = rng.uniform(0.5, 3) * cgs.terrestrial.EARTH_RADIUS / common.JUPITER_RADIUS
         period = rng.uniform(3, 200)
         phase_deg = rng.uniform(0, 360)
+        b_factor = rng.uniform(0, 1)
 
     elif transit_type == 'triple':
         num = 3
@@ -174,6 +177,7 @@ def get_transit_config(p, transit_type, rng):
         TTV_period = []
         TTV_amplitude = []
         TTV_phase = []
+        b_factor = []
         for i in range(num):
             transit = get_transit_config(p,  ['single_shallow', 'single_shallow', 'single_deep'][i], rng)
             radius.append(transit['PlanetRadius'][0])
@@ -182,6 +186,7 @@ def get_transit_config(p, transit_type, rng):
             TTV_period.append(transit['TTV_Period'][0])
             TTV_amplitude.append(transit['TTV_Amplitude'][0])
             TTV_phase.append(transit['TTV_Phase'][0])
+            b_factor.append(transit['ImpactParameterFactor'])
         period = np.array(period)
 
     elif transit_type == 'ttv':
@@ -214,11 +219,7 @@ def get_transit_config(p, transit_type, rng):
 
         TTV_period = period_out / abs(j*Delta)
         TTV_phase = rng.uniform(0, 360)
-    elif transit_type == 'binary':
-        num = 1
-        radius = rng.uniform(5, 8)
-        period = rng.uniform(1, 20)
-        phase_deg = rng.uniform(0, 360)
+        b_factor = rng.uniform(0, 1)
     else:
         raise Exception(f'Unknown transit type: {transit_type}')
 
@@ -232,12 +233,14 @@ def get_transit_config(p, transit_type, rng):
         TTV_period = [TTV_period]
         TTV_amplitude = [TTV_amplitude]
         TTV_phase = [TTV_phase]
+        b_factor = [b_factor]
 
     return {'Enable': num,
             'PlanetRadius':radius,
             'OrbitalPeriod': period,
             'PlanetSemiMajorAxis': semi_major_axis,
             'OrbitalAngle': phase_deg,
+            'ImpactParameterFactor': b_factor,
             'TTV_Period': TTV_period,
             'TTV_Amplitude': TTV_amplitude,
             'TTV_Phase': TTV_phase}

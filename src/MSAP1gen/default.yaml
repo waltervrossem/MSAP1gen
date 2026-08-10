@@ -127,6 +127,7 @@ Transit :
   OrbitalPeriod : [10.]  # in days
   PlanetSemiMajorAxis : [1.]  # in A.U.
   OrbitalAngle : [0.] # in deg
+  ImpactParameterFactor: [0.]
   TTV_Period: [0.]  # days
   TTV_Amplitude: [0.]  # days
   TTV_Phase: [0.]  # degrees

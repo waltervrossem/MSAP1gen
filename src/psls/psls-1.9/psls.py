@@ -63,7 +63,7 @@ def VmP(teff):
 
 def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
                   starRadius, SamplingTime, IntegrationTime, TimeShift, sampleNumber,
-                  orbitalStartAngleRad, p, TTV_period=0, TTV_amplitude=0, TTV_phase=0.0):
+                  orbitalStartAngleRad, p, impactParameterFactor=0, TTV_period=0, TTV_amplitude=0, TTV_phase=0.0):
     '''
     :INPUTS:
     orbitalPeriodSecond = orbital period of the planet in second
@@ -75,6 +75,7 @@ def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
     sampleNumber = number of sample we want (==> z.size)
     orbitalStartAngleRad = orbital angle in radians where to start planet position
     p = rp / r*
+    impactParameterFactor: b = (1+p) * impactParameterFactor
     TTV_period = TTV signal period in seconds
     TTV_amplitude = TTV signal amplitude in seconds
     TTV_phase = Initial TTV signal phase
@@ -115,6 +116,10 @@ def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
         p+1
     )
     z = z.clip(min=0, max=p+1)
+    b = (1+p) * impactParameterFactor
+    z = np.minimum(1+p, np.sqrt(z**2 + b**2))  # Include impact parameter
+    if impactParameterFactor != 0:
+        transit_phases = [t0, np.nan, np.nan]  # Change in t1 and t2 not taken into acount
     return (time,z,transit_dates,transit_phases)
 
 
@@ -1068,7 +1073,7 @@ if __name__ == "__main__":
                     p = Transit['PlanetRadius'][i_planet] * jupiterRadius / StarRadius
                     _, z,_,_ = generateZ(Transit['OrbitalPeriod'][i_planet] * 86400., Transit['PlanetSemiMajorAxis'][i_planet] * ua2Km,
                                      StarRadius, Sampling, IntegrationTime, group_idx * TimeShift, SampleNumber,
-                                     Transit['OrbitalAngle'][i_planet] * math.pi / 180., p,
+                                     Transit['OrbitalAngle'][i_planet] * math.pi / 180., p, Transit['ImpactParameterFactor'][i_planet],
                                      Transit['TTV_Period'][i_planet]*86400, Transit['TTV_Amplitude'][i_planet]*86400, Transit['TTV_Phase'][i_planet])
                     if (len(gamma) == 4):
                         i_transit_component = tr.occultnonlin(z, p, gamma)

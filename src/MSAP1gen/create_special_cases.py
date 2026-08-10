@@ -48,7 +48,7 @@ def make_EB(i, j):
     p_orb = 20
     flux_ratio = 1.5
     t_lores = np.arange(0, n_quarter * len_quarter + 2, 1 / (24 * 10), )
-    tm = RRModel('power-2')
+    tm = RRModel('quadratic')
     tm.set_data(time=t_lores)
 
     flux1 = tm.evaluate(k=0.51, ldc=[0.6, 0.5], t0=0.0, p=p_orb, a=4.2, i=0.5 * np.pi, e=0.0, w=0.0)
@@ -102,6 +102,7 @@ def make_gap_transit(i, j):
                               'OrbitalPeriod': [period],
                               'PlanetSemiMajorAxis': [semi_major_axis],
                               'OrbitalAngle': [phase_deg],
+                              'ImpactParameterFactor': [0],
                               'TTV_Period': [TTV_period],
                               'TTV_Amplitude': [TTV_amplitude],
                               'TTV_Phase': [TTV_phase]})
@@ -206,6 +207,7 @@ def make_wrong_transit_model(i, j):
             'OrbitalPeriod': [50],
             'PlanetSemiMajorAxis': [(1 * (50/365.25636)**2) ** (1/3)],
             'OrbitalAngle': [40],
+            'ImpactParameterFactor': [0],
             'TTV_Period': [0],
             'TTV_Amplitude': [0],
             'TTV_Phase': [0]})
@@ -221,12 +223,13 @@ def make_wrong_transit_model(i, j):
              'OrbitalAngle': 40,
              'TTV_Period': 0,
              'TTV_Amplitude': 0,
+             'ImpactParameterFactor': 0.1,
              'TTV_Phase': 0}
 
     p = 1 * psls.jupiterRadius / StarRadius
     _, z, _, _ = psls.generateZ(Transit['OrbitalPeriod'] * 86400., Transit['PlanetSemiMajorAxis'] * psls.ua2Km,
                                      StarRadius, Sampling, IntegrationTime, 0, t.size,
-                                     Transit['OrbitalAngle'] * np.pi / 180., p,
+                                     Transit['OrbitalAngle'] * np.pi / 180., p, Transit['ImpactParameterFactor'],
                                      Transit['TTV_Period']*86400, Transit['TTV_Amplitude']*86400, Transit['TTV_Phase'])
     flux = psls.tr.occultquad(z, p, gamma)
 
