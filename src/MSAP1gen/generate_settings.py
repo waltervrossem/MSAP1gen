@@ -33,6 +33,8 @@ gaps = ['low', 'high']
 no_gaps = [None]
 camera_groups = [0]  # Choose randomly 1-4 camera groups
 all_groups = [4]
+flare_on = [1]
+flare_off = [0]
 
 profs = []
 for hnum in range(11):
@@ -45,9 +47,10 @@ def make_iter(*args):
     num = np.prod(lengths)
     return itertools.product(*args), num
 
-iters_baseline, num_baseline = make_iter(profs, Vmags, rel_rotations, inclinations, num_spots, no_transits, no_gaps, all_groups)
-iters_planets, num_planets = make_iter(profs, Vmags, single_rot, [90], num_spots, transits, no_gaps, all_groups)
-iters_gapscams, num_gapscams = make_iter(profs, Vmags, rel_rotations, inclinations, num_spots, ['', 'triple'], gaps, camera_groups)
+iters_baseline, num_baseline = make_iter(profs, Vmags, rel_rotations, inclinations, num_spots, no_transits, no_gaps, all_groups, flare_off)
+iters_planets, num_planets = make_iter(profs, Vmags, single_rot, [90], num_spots, transits, no_gaps, all_groups, flare_on)
+iters_gapscams, num_gapscams = make_iter(profs, Vmags, rel_rotations, inclinations, num_spots, ['', 'triple'], gaps, camera_groups, flare_on)
+iters_diffrot, num_diffrot = make_iter(profs, Vmags, rel_rotations, inclinations, ['diffrot'], no_transits, ['low'], all_groups, flare_on)
 
 iters_all = {'baseline': (iters_baseline, num_baseline),
              'planets': (iters_planets, num_planets),
@@ -448,7 +451,7 @@ def get_cam_config(num_cam_group, rng):
     return np.sort(rng.choice([1,2,3,4], num_cam_group, replace=False))
 
 
-def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_config, transit_config, gap_config, cam_groups):
+def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_config, transit_config, gap_config, cam_groups, flare):
     config = {'Observation': {},
               'Star': {},
               'Activity': {},
@@ -468,6 +471,8 @@ def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_confi
     # Generate hash
     # config['Observation']['MasterSeed'] = hash(f'{i}{Vmag}{rot_period}{inclination}') % 2**32
     config['Observation']['MasterSeed'] = hash(f'{pnum}{hnum}') % 2 ** 32
+
+    config['Activity']['Flare'] = int(flare)
 
     with open(path, 'w') as f:
         f.write(common.make_yaml_str(config))
@@ -495,7 +500,7 @@ def generate_gyre_configs():
 
 
 def worker(values):
-    star_id, p, Vmag, rel_rotation, inclination, spot_options, transit_type, gap_options, num_cam_group = values
+    star_id, p, Vmag, rel_rotation, inclination, spot_options, transit_type, gap_options, num_cam_group, flare = values
     out_file_path = f'{out_dir}/{list(iters_all.keys())[j]}/{star_id:010}.yaml'
     # rng = np.random.default_rng(star_id)
     pnum = p.fname.split('.')[0].replace('profile', '')
@@ -510,7 +515,7 @@ def worker(values):
     camera_groups = get_cam_config(num_cam_group, rng[3])
 
     make_psls_config(out_file_path, star_id, p, Vmag, rot_period, inclination, spot_config,
-                     transit_config, gap_config, camera_groups)
+                     transit_config, gap_config, camera_groups, flare)
 
 
 skip_existing = True
