@@ -61,7 +61,7 @@ def _run(args):
                 # Filename part from psls.py
                 StarName = "%10.10i" % int(psls_config['Star']['ID'])
                 input_file = f'{StarName}.hdf5'
-                output_file = f'ref{StarName}.hdf5'
+                output_file = f'{StarName}.h5'
                 format_MSAP1_in(input_file, output_file)
                 if not args.keep_psls_hdf5:
                     os.remove(input_file)
