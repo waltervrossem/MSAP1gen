@@ -65,13 +65,18 @@ class OneSpot:
         self.t0 = t0
         self.lt = lifetime
 
-        Omspot = 2.0 * np.pi * (1.0 - Domega * np.sin(self.chi) * np.sin(self.chi)) / np.exp(lnprot)
+        Omega_eq = 2.0 * np.pi / np.exp(lnprot)  # Equitorial rotation rate
+        Omspot = Omega_eq * (1.0 - Domega * np.sin(self.chi)**2)
 
         self.psi = self.psi0 + (t - self.t0) * Omspot
         self.duree = np.exp(-(np.log(2.0) * (t - self.t0) / (np.exp(lnprot)*lifetime)) ** 2.0)  # Mosser 2009
         mask = self.duree < 1e-9
-        self.t_start = t[~mask][0]
-        self.t_end = t[~mask][-1]
+        if np.any(~mask):
+            self.t_start = t[~mask][0]
+            self.t_end = t[~mask][-1]
+        else:
+            self.t_start = t[0]
+            self.t_end = t[-1]
         self.Domega = Domega
 
         self.fs = fs

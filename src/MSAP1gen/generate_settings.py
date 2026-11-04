@@ -51,7 +51,8 @@ iters_gapscams, num_gapscams = make_iter(profs, Vmags, rel_rotations, inclinatio
 
 iters_all = {'baseline': (iters_baseline, num_baseline),
              'planets': (iters_planets, num_planets),
-             'gapscams': (iters_gapscams, num_gapscams)
+             'gapscams': (iters_gapscams, num_gapscams),
+             'diffrot': (iters_diffrot, num_diffrot)
              }
 
 
@@ -264,7 +265,7 @@ def gen_spots(activity, prot, nquarters, rng):
         if activity in ['active', 'diffrot']:
             meanRadius = 2.5
             stdRadius = 0.5
-            nspotPerRot = 4
+            nspotPerRot = rng.uniform(0, 8)
             meanLogLifetime = 1.8
             stdLifetime = 0.2
             minLatitudes = 0.0
@@ -277,6 +278,7 @@ def gen_spots(activity, prot, nquarters, rng):
             stdLifetime = 0.5
             minLatitudes = 0.0
             maxLatitudes = 30.0
+            dOmega = 0.0
         meanContrast = 0.5
         stdContrast = 0.1
         # Generating spots
@@ -284,21 +286,28 @@ def gen_spots(activity, prot, nquarters, rng):
         nrot = durationLC / prot
         nspotFloat = nspotPerRot * nrot
         nspot = int(nspotFloat)
-        maxTimes = durationLC / (nspot - 1) * np.arange(nspot)
+        if nspot == 0:
+            return config
+        else:
+            # Don't have each spot's maximum equally spaced in time
+            maxTimes = durationLC / nspot * (np.arange(nspot) + rng.uniform(0, 1, nspot))
         radii = rng.normal(meanRadius, stdRadius, nspot)
         lifetimes = np.exp(rng.normal(meanLogLifetime, stdLifetime, nspot))  # https://arxiv.org/pdf/2110.13284
         lifetimes = np.maximum(lifetimes, 0.01)
-        if activity == 'diffrot':
-            latitudes = rng.choice([minLatitudes, maxLatitudes], size=nspot)
-        else:
-            # Draw from a cos distribution
-            latitudes = rng.uniform(np.sin(np.radians(minLatitudes)), np.sin(np.radians(maxLatitudes)), nspot)
-            latitudes = np.degrees(np.asin(latitudes))
+
+        # Draw from a cos distribution
+        latitudes = rng.uniform(np.sin(np.radians(minLatitudes)), np.sin(np.radians(maxLatitudes)), nspot)
+        latitudes = np.degrees(np.asin(latitudes)) * rng.choice([1,-1], nspot, replace=True)
         longitudes = rng.uniform(0.0, 360.0, nspot)
         contrasts = rng.normal(meanContrast, stdContrast, nspot)
 
         # Only positive radii
         radii[radii <= 0] = meanRadius
+
+        if activity == 'diffrot':
+            dOmega = rng.uniform(-0.1, 0.3)  # Solar is +0.1584, 16 Cyg B is +0.239 (Bazot 2019), Aigrain 2015 sample 0.1-1
+        else:
+            dOmega = 0.0
 
         config['Radius'] = radii
         config['Latitude'] = latitudes
@@ -306,6 +315,7 @@ def gen_spots(activity, prot, nquarters, rng):
         config['Lifetime'] = lifetimes
         config['TimeMax'] = maxTimes
         config['Contrast'] = contrasts
+        config['dOmega'] = dOmega
         config = check_spots(config, prot, minLatitudes, maxLatitudes, activity, rng)
 
     return config
@@ -368,7 +378,7 @@ def check_spots(config, prot, minLatitudes, maxLatitudes, activity, rng):
             inispots[s1].psi0 = np.radians(new_lon)
             if (counter[s1] % 5) == 0:
                 latitudes = rng.uniform(np.sin(np.radians(minLatitudes)), np.sin(np.radians(maxLatitudes)))
-                latitudes = np.degrees(np.asin(latitudes))
+                latitudes = np.degrees(np.asin(latitudes)) * rng.choice([-1, 1], 1)[0]
                 config['Latitude'][s1] = latitudes
                 inispots[s1].chi = np.radians(config['Latitude'][s1])
             Omspot = 2.0 * np.pi * (
@@ -403,6 +413,8 @@ def get_spot_config(spot_options, prot, rng):
     else:
         config['Enable'] = 1
         config.update(gen_spots(spot_options, prot, 8, rng))
+        if len(config['Radius']) == 0:
+            config['Enable'] = 0
     return config
 
 
