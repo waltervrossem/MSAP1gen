@@ -105,6 +105,10 @@ def format_MSAP1_in(input_file, output_file):
                 T = 1
             CAMGROUP_LC = ((np.ones(f['TIME'].shape) + (O + G + A) * s) * np.mean(1 + (RSE + R) * s, axis=2) * S * F * T * E - 1)/s  # Within 1e-10 of PSLS output
 
+            metadata_psls = {}
+            for key, value in f.attrs.items():
+                metadata_psls[key] = value
+
             time = f['TIME'][()]
             time = time.reshape(np.prod(time.shape))
             dat = {'ONBOARD_TIME': time,
