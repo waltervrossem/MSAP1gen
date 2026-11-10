@@ -14,6 +14,7 @@ TEFF_SUN = 5777.0 # Solar effective temperature [K]
 LOGG_SUN = 4.43 # Solar surface gravity [dex]
 DEFAULT_GAIA_COLOR_ERROR = 0.01 # Default error on Gaia color when it cannot be computed from normal relation
 
+BARYCENTRIC_TIME_OFFSET = 2461355
 
 def gaia_color(teff_obj):
     """
@@ -53,9 +54,12 @@ def error_gaia_color(teff_obj):
     return dColor
 
 
-def format_MSAP1_in(input_file, output_file):
+def format_MSAP1_in(input_file, output_file, overwrite=False):
     if os.path.exists(output_file):
-        raise FileExistsError(f'Output file already exists: {output_file}')
+        if overwrite:
+            os.remove(output_file)
+        else:
+            raise FileExistsError(f'Output file already exists: {output_file}')
     with h5py.File(input_file, 'r') as f:
             # O: oscillations (ppm)
             # G: granulation (ppm)
@@ -101,8 +105,10 @@ def format_MSAP1_in(input_file, output_file):
                 F = 1
             if 'TRANSIT_LC' in f.keys():
                 T = f['TRANSIT_LC']
+                have_transit = True
             else:
                 T = 1
+                have_transit = False
             CAMGROUP_LC = ((np.ones(f['TIME'].shape) + (O + G + A) * s) * np.mean(1 + (RSE + R) * s, axis=2) * S * F * T * E - 1)/s  # Within 1e-10 of PSLS output
 
             metadata_psls = {}
@@ -112,7 +118,7 @@ def format_MSAP1_in(input_file, output_file):
             time = f['TIME'][()]
             time = time.reshape(np.prod(time.shape))
             dat = {'ONBOARD_TIME': time,
-                   'BARYCENTRIC_TIME':  26299 + time/86400,
+                   'BARYCENTRIC_TIME':  BARYCENTRIC_TIME_OFFSET + time/86400,
                    'RFLUX': 1+CAMGROUP_LC.reshape(time.shape)*s,
                    'Cadence': 25.0,
                    'QUARTER': np.floor_divide(time-time[0], 90.0*86400).astype(int) + 1,
@@ -128,6 +134,16 @@ def format_MSAP1_in(input_file, output_file):
 
             Teff_SAS_obj = DataClassFactory.get_model("IDP_SAS_TEFF_SAPP")(value=metadata_psls["teff"], error=50)
             logg_SAS_obj = DataClassFactory.get_model("IDP_SAS_LOGG_SAPP")(value=metadata_psls["logg"], error=0.1)
+
+            if have_transit:
+                Ecl_dat = {}
+                for i in range(5):
+                    Ecl_dat[f"t{i}"] = f["transit_times"][:,i] + BARYCENTRIC_TIME_OFFSET
+                Eclipse = DataClassFactory.get_model("EclipseDM")(**Ecl_dat)
+                TCE = DataClassFactory.get_model("TCEDM")(Period=eval(metadata_psls["Setup"])["Transit"]["OrbitalPeriod"])
+                RelativeFluxCurve = DataClassFactory.get_model("RelativeFluxCurveDM")(flux=T[()].reshape(time.shape), epoch=dat["BARYCENTRIC_TIME"])
+                transit_data = DataClassFactory.get_model("IDP_EAS_TRANSIT_REMOVAL_KIT")(Eclipse=Eclipse, Relative_flux_curve=RelativeFluxCurve, TCE=TCE)
+
             # Create a SAS storage for the SAS workflow
             hdf5 = HDF5StorageSasWorkflow(output_file)
 
@@ -140,4 +156,9 @@ def format_MSAP1_in(input_file, output_file):
             sas.save_external(logg_SAS_obj)
             sas.save_external(rad_obj)
             sas.save_external(bprp_obj)
+            if have_transit:
+                sas.save_external(transit_data)
+                with h5py.File(output_file, 'a') as f2:
+                    f2["EXTERNALS"].create_dataset("IDP_EAS_QC_TARGET_TCE_DETECTION", data=True, dtype=bool)
+
             os.chmod(output_file, 0o666)  # Fix permissions for further steps

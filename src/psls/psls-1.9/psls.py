@@ -1076,18 +1076,21 @@ if __name__ == "__main__":
                     spot_ts[:,i,1] = spot_component
             if (TransitEnable):
                 transit_component = transit_ts[:,i,1]
+                all_transit_phases = []
                 for i_planet in range(Transit['Enable']):
                     p = Transit['PlanetRadius'][i_planet] * jupiterRadius / StarRadius
-                    _, z,_,transit_phases = generateZ(Transit['OrbitalPeriod'][i_planet] * 86400., Transit['PlanetSemiMajorAxis'][i_planet] * ua2Km,
+                    _, z,_,_transit_phases = generateZ(Transit['OrbitalPeriod'][i_planet] * 86400., Transit['PlanetSemiMajorAxis'][i_planet] * ua2Km,
                                      StarRadius, Sampling, IntegrationTime, group_idx * TimeShift, SampleNumber,
                                      Transit['OrbitalAngle'][i_planet] * math.pi / 180., p, Transit['ImpactParameterFactor'][i_planet],
                                      Transit['TTV_Period'][i_planet]*86400, Transit['TTV_Amplitude'][i_planet]*86400, Transit['TTV_Phase'][i_planet])
+                    all_transit_phases.append(_transit_phases)
                     if (len(gamma) == 4):
                         i_transit_component = tr.occultnonlin(z, p, gamma)
                     else:
                         i_transit_component = tr.occultquad(z, p, gamma, verbose=Verbose)
                     transit_component += i_transit_component  # Assume planet transits are additive i.e. simultaneous
                                                               # tranits do not affect each other
+                all_transit_phases = np.array(all_transit_phases)
                 transit_component -= (Transit['Enable'] - 1)  # Renormalize
                 if (SaveHDF5):
                     transit_ts[:,i,1] = transit_component
@@ -1474,12 +1477,14 @@ if __name__ == "__main__":
                     Flux_curve.create_dataset('flux', data=transit_ts[:,:,1].reshape((nt*NGroup)))
                     TCE = IDP_EAS_TRANSIT_REMOVAL_KIT.create_group('TCE')
                     TCE.create_dataset('Period',data=np.array([Transit['OrbitalPeriod']]))
-                    Eclipse.create_dataset('t0', data=np.array([transit_phases[0]]))
-                    Eclipse.create_dataset('t1', data=np.array([transit_phases[1]]))
-                    Eclipse.create_dataset('t2', data=np.array([transit_phases[2]]))
+                    Eclipse.create_dataset('t0', data=np.array([all_transit_phases[:,0]]))
+                    Eclipse.create_dataset('t1', data=np.array([all_transit_phases[:,1]]))
+                    Eclipse.create_dataset('t2', data=np.array([all_transit_phases[:,2]]))
                     IDP_EAS_QC_TARGET_TCE_DETECTION.create_dataset('flag', data=True)
                 else:
                     IDP_EAS_QC_TARGET_TCE_DETECTION.create_dataset('flag', data=False)
+            else:
+                hdf5file.create_dataset("transit_times", data=all_transit_phases)
             hdf5file.close()
         else:
             if(SavePSD):
