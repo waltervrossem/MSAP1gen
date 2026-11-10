@@ -50,11 +50,13 @@ def make_iter(*args):
 iters_baseline, num_baseline = make_iter(profs, Vmags, rel_rotations, inclinations, num_spots, no_transits, no_gaps, all_groups, flare_off)
 iters_planets, num_planets = make_iter(profs, Vmags, single_rot, [90], num_spots, transits, no_gaps, all_groups, flare_on)
 iters_gapscams, num_gapscams = make_iter(profs, Vmags, rel_rotations, inclinations, num_spots, ['', 'triple'], gaps, camera_groups, flare_on)
+iters_baseline_diffrot, num_baseline_diffrot = make_iter(profs, Vmags, rel_rotations, inclinations, ['diffrot'], no_transits, no_gaps, all_groups, flare_off)
 iters_diffrot, num_diffrot = make_iter(profs, Vmags, rel_rotations, inclinations, ['diffrot'], no_transits, ['low'], all_groups, flare_on)
 
 iters_all = {'baseline': (iters_baseline, num_baseline),
              'planets': (iters_planets, num_planets),
              'gapscams': (iters_gapscams, num_gapscams),
+             'baseline_diffrot': (iters_baseline_diffrot, num_baseline_diffrot),
              'diffrot': (iters_diffrot, num_diffrot)
              }
 
