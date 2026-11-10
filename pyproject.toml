@@ -2,14 +2,21 @@
 requires = ["setuptools >= 77.0.3"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.package-dir]
+"" = "src"
+
 [tool.setuptools]
 include-package-data = true
-[tool.setuptools.packages.find]
-where = ["src"]
+
+[tool.setuptools.package-data]
+MSAP1gen = ["default.yaml"]
+psls = ["psls-1.9/*", "psls-1.9/systematics/*"]
+
+packages = ["MSAP1gen", "psls"]
 
 [project]
 name = "MSAP1gen"
-version = "0.0.2"
+version = "0.1.0"
 authors = [
   { name="Walter van Rossem", email="walter_v_rossem@hotmail.com" },
 ]
