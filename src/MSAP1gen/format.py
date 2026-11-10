@@ -140,3 +140,4 @@ def format_MSAP1_in(input_file, output_file):
             sas.save_external(logg_SAS_obj)
             sas.save_external(rad_obj)
             sas.save_external(bprp_obj)
+            os.chmod(output_file, 0o666)  # Fix permissions for further steps
