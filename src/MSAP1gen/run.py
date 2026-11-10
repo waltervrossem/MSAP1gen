@@ -11,6 +11,7 @@ from MSAP1gen.format import format_MSAP1_in
 
 def get_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--verbose', '-v', action='store_const', const=True, default=False)
     parser.add_argument('--dirname', '-d', type=str,
                         help="Working directory in which to create config file and run psls.py.")
     parser.add_argument('--config', '-c', type=str, default='config.yaml', nargs='*',
@@ -48,11 +49,16 @@ def _run(args):
     psls_args = args.psls_args
     seed = args.seed
 
+    if args.verbose:
+        psls_args += " -V"
+
     if not args.run_only:
         cg.setup(dirname, configname, gs_path, seed, fname)
 
     if not args.setup_only:
         cmd = f'python {PSLS_DIR}/psls.py {psls_args} {fname}'
+        if args.verbose:
+            print(f"{cmd=}")
         with temp_chdir(dirname):
             print(os.path.abspath(os.path.curdir))
             ierr = os.system(cmd)
@@ -72,6 +78,9 @@ def _run(args):
 def run(args=None):
     if args is None:
         args = get_parser().parse_args()
+    if args.verbose:
+        for arg in vars(args):
+            print(arg, getattr(args, arg))
     ts = time.time()
     _run(args)
     print('Elapsed time:', time.time() - ts)
