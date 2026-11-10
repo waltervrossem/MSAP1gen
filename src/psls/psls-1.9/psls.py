@@ -970,9 +970,15 @@ if __name__ == "__main__":
             if(m.sum()>0):
                 raise sls.SLSError("When SystematicDataVersion<2, all quarters shall last excatly 90 days")
 
-        DataSystematic = sls.ExtractSystematicDataMagRange(
-            Systematics['Table'],StarVpMag,version=SystematicDataVersion,DriftLevel=DriftLevel,
-            Verbose=Verbose,seed=seeds[1])
+        try:
+            DataSystematic = sls.ExtractSystematicDataMagRange(
+                Systematics['Table'],StarVpMag,version=SystematicDataVersion,DriftLevel=DriftLevel,
+                Verbose=Verbose,seed=seeds[1])
+        except FileNotFoundError:
+            table_path = f"{os.path.dirname(__file__)}/systematics/{os.path.basename(Systematics['Table'])}"
+            DataSystematic = sls.ExtractSystematicDataMagRange(
+                table_path,StarVpMag,version=SystematicDataVersion,DriftLevel=DriftLevel,
+                Verbose=Verbose,seed=seeds[1])
 
     # Total white-noise level ppm/Hz^(1/2), for a each single Camera
     RandomNoise =  Instrument['RandomNoise']
