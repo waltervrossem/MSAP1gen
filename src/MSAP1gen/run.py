@@ -11,7 +11,7 @@ from MSAP1gen.format import format_MSAP1_in
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--verbose', '-v', action='store_const', const=True, default=False)
+    parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--dirname', '-d', type=str,
                         help="Working directory in which to create config file and run psls.py.")
     parser.add_argument('--config', '-c', type=str, default='config.yaml', nargs='*',
@@ -49,7 +49,7 @@ def _run(args):
     psls_args = args.psls_args
     seed = args.seed
 
-    if args.verbose:
+    if args.verbose == 2:
         psls_args += " -V"
 
     if not args.run_only:
