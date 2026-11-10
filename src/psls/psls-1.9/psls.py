@@ -97,9 +97,9 @@ def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
         TTV_angle_perturbation = TTV_amplitude/orbitalPeriodSecond * np.sin((2*math.pi / TTV_period)*time + math.pi/180 * TTV_phase)
         angles = angles + TTV_angle_perturbation
 
-    t0 = angle0*orbitalPeriodSecond/2./math.pi + orbitalPeriodSecond/4.
-    if t0 > orbitalPeriodSecond:
-        t0 -= orbitalPeriodSecond
+    t0 = (2*np.pi - angle0)*orbitalPeriodSecond/2./math.pi + orbitalPeriodSecond/4.
+    t0 = np.mod(t0, orbitalPeriodSecond)
+
     tnb = int(math.floor((sampleNumber*SamplingTime-t0)/orbitalPeriodSecond)) + 1
     transit_dates =  t0 + np.arange(tnb) * orbitalPeriodSecond
     transit_dates /= 86400.
@@ -110,16 +110,28 @@ def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
         p+1
     )
     z = z.clip(min=0, max=p+1)
-    b = (1+p) * impactParameterFactor
-    z = np.minimum(1+p, np.sqrt(z**2 + b**2))  # Include impact parameter
+    b_max = 1 + p
+    b = b_max * impactParameterFactor
+    z = np.minimum(b_max, np.sqrt(z**2 + b**2))  # Include impact parameter
 
-    transit_duration = orbitalPeriodSecond / 86400 / np.pi * np.arcsin(np.sqrt(1 - impactParameterFactor ** 2) / (
-                (planetSemiMajorAxis / starRadius) * np.sqrt(1 - (b * starRadius / planetSemiMajorAxis) ** 2)))
-    t1 = orbitalStartAngleRad / (2 * np.pi) * orbitalPeriodSecond / 86400
-    t0 = t1 - transit_duration/2
-    t2 = t1 + transit_duration/2
+    sin_i = np.sqrt(1 - (b * starRadius / planetSemiMajorAxis) ** 2)
 
-    transit_phases = [t0,t1,t2] # start, middle and end dates of the first transit
+    transit_duration = orbitalPeriodSecond / 86400 / np.pi * np.arcsin(b_max*np.sqrt(1 - impactParameterFactor ** 2) / (
+                (planetSemiMajorAxis / starRadius) * sin_i))
+    if b <= 1 - p:  # Planet is fully within disc of star at some point
+        ingress_duration = transit_duration/2 - orbitalPeriodSecond / 86400 / 2 / np.pi * np.arcsin(np.sqrt((1 - p)**2 - b**2) / (
+                    (planetSemiMajorAxis / starRadius) * sin_i))
+    else:
+        ingress_duration = transit_duration/2  # Sets t2 and t4 to transit midpoint
+
+
+    t0 = t0 / 86400  # Eclipse centre
+    t1 = t0 - transit_duration/2  # Start of ingress
+    t2 = t1 + ingress_duration  # End of ingress
+    t4 = t0 + transit_duration/2  # Start of egress
+    t3 = t4 - ingress_duration  # End of egress
+
+    transit_phases = [t0,t1,t2,t3,t4]
 
     return (time,z,transit_dates,transit_phases)
 
@@ -1480,6 +1492,8 @@ if __name__ == "__main__":
                     Eclipse.create_dataset('t0', data=np.array([all_transit_phases[:,0]]))
                     Eclipse.create_dataset('t1', data=np.array([all_transit_phases[:,1]]))
                     Eclipse.create_dataset('t2', data=np.array([all_transit_phases[:,2]]))
+                    Eclipse.create_dataset('t3', data=np.array([all_transit_phases[:,3]]))
+                    Eclipse.create_dataset('t4', data=np.array([all_transit_phases[:,4]]))
                     IDP_EAS_QC_TARGET_TCE_DETECTION.create_dataset('flag', data=True)
                 else:
                     IDP_EAS_QC_TARGET_TCE_DETECTION.create_dataset('flag', data=False)
