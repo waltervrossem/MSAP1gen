@@ -1,0 +1,9 @@
+# Ignore everything
+*
+
+# Allow files and directories
+!/src/MSAP1gen
+!/src/psls
+!/pyproject.toml
+!/README.md
+!/LICENSE
