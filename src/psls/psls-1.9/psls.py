@@ -98,17 +98,11 @@ def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
         angles = angles + TTV_angle_perturbation
 
     t0 = angle0*orbitalPeriodSecond/2./math.pi + orbitalPeriodSecond/4.
+    if t0 > orbitalPeriodSecond:
+        t0 -= orbitalPeriodSecond
     tnb = int(math.floor((sampleNumber*SamplingTime-t0)/orbitalPeriodSecond)) + 1
     transit_dates =  t0 + np.arange(tnb) * orbitalPeriodSecond
     transit_dates /= 86400.
-
-
-    phi0 = np.arccos((p+1)/np.abs((planetSemiMajorAxis / starRadius)))
-    t0 = phi0*orbitalPeriodSecond/2./math.pi/86400.
-    phi2 = np.arccos(-(p+1)/np.abs((planetSemiMajorAxis / starRadius)))
-    t2 = phi2*orbitalPeriodSecond/2./math.pi/86400.
-    t1 = (t0+t2)/2.
-    transit_phases = [t0,t1,t2] # start, middle and end dates of the first transit
 
     z = np.where(
         np.sin(angles)>0,
@@ -118,8 +112,15 @@ def generateZ(orbitalPeriodSecond, planetSemiMajorAxis,
     z = z.clip(min=0, max=p+1)
     b = (1+p) * impactParameterFactor
     z = np.minimum(1+p, np.sqrt(z**2 + b**2))  # Include impact parameter
-    if impactParameterFactor != 0:
-        transit_phases = [t0, np.nan, np.nan]  # Change in t1 and t2 not taken into acount
+
+    transit_duration = orbitalPeriodSecond / 86400 / np.pi * np.arcsin(np.sqrt(1 - impactParameterFactor ** 2) / (
+                (planetSemiMajorAxis / starRadius) * np.sqrt(1 - (b * starRadius / planetSemiMajorAxis) ** 2)))
+    t1 = orbitalStartAngleRad / (2 * np.pi) * orbitalPeriodSecond / 86400
+    t0 = t1 - transit_duration/2
+    t2 = t1 + transit_duration/2
+
+    transit_phases = [t0,t1,t2] # start, middle and end dates of the first transit
+
     return (time,z,transit_dates,transit_phases)
 
 
@@ -1071,7 +1072,7 @@ if __name__ == "__main__":
                 transit_component = transit_ts[:,i,1]
                 for i_planet in range(Transit['Enable']):
                     p = Transit['PlanetRadius'][i_planet] * jupiterRadius / StarRadius
-                    _, z,_,_ = generateZ(Transit['OrbitalPeriod'][i_planet] * 86400., Transit['PlanetSemiMajorAxis'][i_planet] * ua2Km,
+                    _, z,_,transit_phases = generateZ(Transit['OrbitalPeriod'][i_planet] * 86400., Transit['PlanetSemiMajorAxis'][i_planet] * ua2Km,
                                      StarRadius, Sampling, IntegrationTime, group_idx * TimeShift, SampleNumber,
                                      Transit['OrbitalAngle'][i_planet] * math.pi / 180., p, Transit['ImpactParameterFactor'][i_planet],
                                      Transit['TTV_Period'][i_planet]*86400, Transit['TTV_Amplitude'][i_planet]*86400, Transit['TTV_Phase'][i_planet])
