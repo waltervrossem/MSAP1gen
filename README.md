@@ -22,7 +22,7 @@ To create a lightcurve, run as follows:
 ```
 confignum=0000000000  # 10 digits, starting with 0, 1, 2, or 9.
 kind=baseline  # one of baseline, planets, gapscams, special
-MSAP1gen -d ./input/$kind/$confignum -c ./input/$kind/$confignum/psls.yaml --psls-args '\--hdf5 --skip-spot-overlap' --run-only --format
+MSAP1gen -d ./input/$kind/$confignum -c ./input/$kind/$confignum/psls.yaml --psls-args '\--hdf5 --proto-sas --skip-spot-overlap' --run-only --format
 ```
 As the input directories have already been created we run with `--run-only`, 
 similarly, we pass `--skip-spot-overlap` to `psls.py` as these checks have already been performed
