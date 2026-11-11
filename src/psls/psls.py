@@ -3,7 +3,7 @@ import numpy as np
 import math
 import sls
 import os
-import re 
+import re
 import yaml
 import sys
 import getopt

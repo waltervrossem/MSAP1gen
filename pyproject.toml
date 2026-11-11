@@ -10,7 +10,7 @@ include-package-data = true
 
 [tool.setuptools.package-data]
 MSAP1gen = ["default.yaml"]
-psls = ["psls-1.9/*", "psls-1.9/systematics/*"]
+psls = ["systematics/*"]
 
 packages = ["MSAP1gen", "psls"]
 
