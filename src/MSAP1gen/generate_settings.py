@@ -20,6 +20,8 @@ import psls.psls as psls
 
 
 out_dir = f'{os.path.dirname(__file__)}/../../configs'
+if len(sys.argv) > 1:
+    out_dir = sys.argv[1]
 
 Vmags = [8.5, 10, 13]  # psls can't handle Vmag brighter than ~8.5 for all Teff
 rel_rotations = [0.85, 1, 1.15]
@@ -473,7 +475,7 @@ def make_psls_config(path, i, profile, Vmag, rot_period, inclination, spot_confi
     # config['Observation']['MasterSeed'] = hash(f'{i}{Vmag}{rot_period}{inclination}') % 2**32
     config['Observation']['MasterSeed'] = hash(f'{pnum}{hnum}') % 2 ** 32
 
-    config['Activity']['Flare'] = int(flare)
+    config['Activity']['Flare'] = {'Enable': int(flare)}
 
     with open(path, 'w') as f:
         f.write(common.make_yaml_str(config))
@@ -524,7 +526,7 @@ if __name__ == "__main__":
     nworker = mp.cpu_count()
     os.environ['OMP_NUM_THREADS'] = '1'
     generate_gyre_configs()
-    for j, (kind, (iters, num)) in enumerate(iters_all.items()):#, iters_special_case]):
+    for j, (kind, (iters, num)) in enumerate(iters_all.items()):
         if num == 0:
             continue
         print(f'Making {kind} configs.')
