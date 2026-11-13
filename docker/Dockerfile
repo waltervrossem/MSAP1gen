@@ -38,7 +38,9 @@ FROM pre_builder AS builder
 
 WORKDIR /app
 
-COPY . .
+RUN mkdir -p src
+COPY src/MSAP1gen src/MSAP1gen
+COPY src/psls src/psls
 RUN pip install --no-dependencies .
 
 FROM python:3.12-slim-bookworm AS release
