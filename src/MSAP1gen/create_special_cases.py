@@ -15,8 +15,8 @@ from pytransit import RRModel
 from MSAP1gen import create_config as cg
 from MSAP1gen import common
 
-sys.path.append(f'{os.path.dirname(__file__)}/../psls/psls-1.9')
-import psls.psls as psls
+sys.path = [common.PSLS_DIR, *sys.path]
+from psls import psls
 
 baseline_model = 1783  # Sun-like
 n_quarter = 8

@@ -10,7 +10,7 @@ import psls
 if 'PSLS_DIR' in os.environ:
     PSLS_DIR = os.environ['PSLS_DIR']
 else:
-    PSLS_DIR = os.path.abspath(psls.__path__[0])
+    PSLS_DIR = os.path.abspath(os.path.dirname(psls.__file__))
 if not os.path.exists(PSLS_DIR):
     raise NotADirectoryError(f'PSLS_DIR: {PSLS_DIR}')
 

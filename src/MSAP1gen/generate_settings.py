@@ -16,7 +16,8 @@ from scipy import interpolate as ip
 
 from MSAP1gen import common
 
-import psls.psls as psls
+sys.path = [common.PSLS_DIR, *sys.path]
+from psls import psls
 
 
 out_dir = f'{os.path.dirname(__file__)}/../../configs'
