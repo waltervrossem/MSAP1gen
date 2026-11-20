@@ -24,7 +24,7 @@ out_dir = f'{os.path.dirname(__file__)}/../../configs'
 if len(sys.argv) > 1:
     out_dir = sys.argv[1]
 
-Vmags = [8.5, 10, 13]  # psls can't handle Vmag brighter than ~8.5 for all Teff
+Vmags = [8.5, 10, 12]  # psls can't handle Vmag brighter than ~8.5 for all Teff, MSAP4_01 issues with Vmag 13
 rel_rotations = [0.85, 1, 1.15]
 single_rot = [1]
 inclinations = [15, 30, 60, 90]
@@ -307,6 +307,7 @@ def gen_spots(activity, prot, nquarters, rng):
         latitudes = np.degrees(np.asin(latitudes)) * rng.choice([1,-1], nspot, replace=True)
         longitudes = rng.uniform(0.0, 360.0, nspot)
         contrasts = rng.normal(meanContrast, stdContrast, nspot)
+        contrasts = np.clip(contrasts, 0.4, 0.9)
 
         # Only positive radii
         radii[radii <= 0] = meanRadius
