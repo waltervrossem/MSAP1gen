@@ -4,7 +4,8 @@ echo "Creating psls input directories for MSAP1"
 date "+DATE: %Y-%m-%d%nTIME: %H:%M:%S"
 curdir=$(pwd)
 
-#rm -rf configs input
+#rm -rf configs
+#rm -rf input
 #rm -rf src/MESA/gyre_in src/MESA/grid/*/rot
 #rm -rf src/MESA/grid
 
@@ -15,7 +16,7 @@ if [ ! -d "$curdir/src/MESA/grid" ]; then
 fi
 
 cd $curdir/src/MSAP1gen
-python generate_settings.py
+python generate_settings.py /home/walter/Github/MSAP1gen/configs
 cd $curdir/src/MESA
 ./run_gyre.sh
 cd $curdir/src/MSAP1gen
