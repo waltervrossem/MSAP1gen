@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 import os
+import subprocess
 import time
 import argparse
+import tempfile
 
 import MSAP1gen.create_config as cg
 from MSAP1gen.common import PSLS_DIR, temp_chdir, read_yaml
@@ -57,11 +59,14 @@ def _run(args):
 
     if not args.setup_only:
         cmd = f'python {PSLS_DIR}/psls.py {psls_args} {fname}'
+        if not args.keep_psls_hdf5:
+            tempdir = tempfile.TemporaryDirectory()
+            cmd = f'python {PSLS_DIR}/psls.py {psls_args} -o {tempdir.name} {fname}'
         if args.verbose:
             print(f"{cmd=}")
         with temp_chdir(dirname):
             print(os.path.abspath(os.path.curdir))
-            ierr = os.system(cmd)
+            ierr = subprocess.call(cmd, shell=True)
             if ierr != 0:
                 raise RuntimeError(f'Error running psls.py.')
             if args.format:
@@ -69,10 +74,14 @@ def _run(args):
                 # Filename part from psls.py
                 StarName = "%10.10i" % int(psls_config['Star']['ID'])
                 input_file = f'{StarName}.hdf5'
+                if not args.keep_psls_hdf5:
+                    input_file = os.path.join(tempdir.name, input_file)
                 output_file = os.path.join(args.output_dir, f'{StarName}.h5')
                 format_MSAP1_in(input_file, output_file)
                 if not args.keep_psls_hdf5:
                     os.remove(input_file)
+        if not args.keep_psls_hdf5:
+            tempdir.cleanup()
 
 
 def run(args=None):
