@@ -275,7 +275,7 @@ def setup(dirname, config, gs_path, seed, fname='psls.yaml'):
         config = update_config(config)
 
     if gs_path is None:
-        hist_num, prof_num, rot = config['Star']['ModelName'].split('_')
+        hist_num, prof_num, rot, inclination = config['Star']['ModelName'].split('_')
         rot = rot[:4]
         gs_path = f'{this_dir}/../MESA/grid/{hist_num}/rot/profile{prof_num}.data.GYRE.{rot}.sgyre_l'
         if not os.path.exists(gs_path):
