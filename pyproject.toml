@@ -16,7 +16,7 @@ packages = ["MSAP1gen", "psls"]
 
 [project]
 name = "MSAP1gen"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   { name="Walter van Rossem", email="walter_v_rossem@hotmail.com" },
 ]

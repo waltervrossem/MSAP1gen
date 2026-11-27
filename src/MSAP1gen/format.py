@@ -71,6 +71,8 @@ def format_MSAP1_in(input_file, output_file, overwrite=False):
             # s = 10^(-6)
             # INDIVIDUAL_LC = ( ( 1 + ( O + G + A ) * s ) * ( 1 + (RSE + R)*s ) * S * T – 1)/s
             s = 1e-6
+            time = f['TIME'][()]
+
             if 'OSCILLATIONS_LC' in f.keys():
                 O = f['OSCILLATIONS_LC'][()]
             else:
@@ -103,19 +105,30 @@ def format_MSAP1_in(input_file, output_file, overwrite=False):
                 F = f['FLARES_LC'][()]
             else:
                 F = 1
-            if 'TRANSIT_LC' in f.keys():
-                T = f['TRANSIT_LC']
-                have_transit = True
+
+            if 'EXTERNALS' in f.keys():  # proto-sas
+                is_proto_sas = True
+                if f['EXTERNALS']['IDP_EAS_QC_TARGET_TCE_DETECTION']['flag'][()]:
+                    T = f['EXTERNALS']['IDP_EAS_TRANSIT_REMOVAL_KIT']['Relative_flux_curve']['flux'][()].reshape(time.shape)
+                    have_transit = True
+                else:
+                    T = 1
+                    have_transit = False
             else:
-                T = 1
-                have_transit = False
-            CAMGROUP_LC = ((np.ones(f['TIME'].shape) + (O + G + A) * s) * np.mean(1 + (RSE + R) * s, axis=2) * S * F * T * E - 1)/s  # Within 1e-10 of PSLS output
+                is_proto_sas = False
+                if 'TRANSIT_LC' in f.keys():
+                    T = f['TRANSIT_LC']
+                    have_transit = True
+                else:
+                    T = 1
+                    have_transit = False
+
+            CAMGROUP_LC = ((np.ones(time.shape) + (O + G + A) * s) * np.mean(1 + (RSE + R) * s, axis=2) * S * F * T * E - 1)/s  # Within 1e-10 of PSLS output
 
             metadata_psls = {}
             for key, value in f.attrs.items():
                 metadata_psls[key] = value
 
-            time = f['TIME'][()]
             time = time.reshape(np.prod(time.shape))
             dat = {'ONBOARD_TIME': time,
                    'BARYCENTRIC_TIME':  BARYCENTRIC_TIME_OFFSET + time/86400,
@@ -137,8 +150,12 @@ def format_MSAP1_in(input_file, output_file, overwrite=False):
 
             if have_transit:
                 Ecl_dat = {}
-                for i in range(5):
-                    Ecl_dat[f"t{i}"] = f["transit_times"][:,i] + BARYCENTRIC_TIME_OFFSET
+                if is_proto_sas:
+                    for i in range(5):
+                        Ecl_dat[f"t{i}"] = f["EXTERNALS"]["IDP_EAS_TRANSIT_REMOVAL_KIT"]["Eclipse"][f"t{i}"][()].flatten() + BARYCENTRIC_TIME_OFFSET
+                else:
+                    for i in range(5):
+                        Ecl_dat[f"t{i}"] = f["transit_times"][:,i] + BARYCENTRIC_TIME_OFFSET
                 Eclipse = DataClassFactory.get_model("EclipseDM")(**Ecl_dat)
                 TCE = DataClassFactory.get_model("TCEDM")(Period=eval(metadata_psls["Setup"])["Transit"]["OrbitalPeriod"])
                 RelativeFluxCurve = DataClassFactory.get_model("RelativeFluxCurveDM")(flux=T[()].reshape(time.shape), epoch=dat["BARYCENTRIC_TIME"])
@@ -158,7 +175,5 @@ def format_MSAP1_in(input_file, output_file, overwrite=False):
             sas.save_external(bprp_obj)
             if have_transit:
                 sas.save_external(transit_data)
-                with h5py.File(output_file, 'a') as f2:
-                    f2["EXTERNALS"].create_dataset("IDP_EAS_QC_TARGET_TCE_DETECTION", data=True, dtype=bool)
 
             os.chmod(output_file, 0o666)  # Fix permissions for further steps
