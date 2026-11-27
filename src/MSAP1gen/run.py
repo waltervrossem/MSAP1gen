@@ -5,6 +5,7 @@ import subprocess
 import time
 import argparse
 import tempfile
+from importlib.metadata import version
 
 import MSAP1gen.create_config as cg
 from MSAP1gen.common import PSLS_DIR, temp_chdir, read_yaml
@@ -63,6 +64,7 @@ def _run(args):
             tempdir = tempfile.TemporaryDirectory()
             cmd = f'python {PSLS_DIR}/psls.py {psls_args} -o {tempdir.name} {fname}'
         if args.verbose:
+            print(f"MSAP1gen {version('MSAP1gen')}")
             print(f"{cmd=}")
         with temp_chdir(dirname):
             print(os.path.abspath(os.path.curdir))
